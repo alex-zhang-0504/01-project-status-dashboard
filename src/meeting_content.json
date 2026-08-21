@@ -1,0 +1,84 @@
+{
+  "sections": [
+    {
+      "title": "会议纪律",
+      "items": [
+        {
+          "marker": "diamond",
+          "parts": [
+            {
+              "text": "原则不允许请假，如有特殊原因，请假需要提前一天邮件向分管领导（朱荣昌、王海涛、李金智、陈廷波、谢毅力、朱海涛、史团委、高启杰、李鑫）审批，指定合适的会议代理人，并抄送王海滨。"
+            }
+          ]
+        },
+        {
+          "marker": "diamond",
+          "parts": [
+            { "text": "会议不允许迟到早退，不允许开小会，全程手机请保持静音" }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "会议纪律--水果基金",
+      "items": [
+        {
+          "marker": "diamond",
+          "parts": [
+            { "text": "缺席：无请假无通知，" },
+            { "text": "500元/次", "tone": "danger" },
+            { "text": "。" }
+          ]
+        },
+        {
+          "marker": "diamond",
+          "parts": [
+            { "text": "请假有代理：一季度允许一次，第二次罚款" },
+            { "text": "100元/次", "tone": "danger" },
+            { "text": "（合理请假除外）。" }
+          ]
+        },
+        {
+          "marker": "diamond",
+          "parts": [
+            { "text": "请假无代理：" },
+            { "text": "300元/次", "tone": "danger" },
+            { "text": "（合理请假除外）。" }
+          ]
+        },
+        {
+          "marker": "diamond",
+          "parts": [
+            { "text": "迟到：迟到10分钟，" },
+            { "text": "100元/次", "tone": "danger" },
+            { "text": "（迟到超过10分钟算缺席）。" }
+          ]
+        },
+        {
+          "marker": "diamond",
+          "parts": [
+            { "text": "早退：早退10分钟，" },
+            { "text": "100元/次", "tone": "danger" },
+            { "text": "（早退超过10分钟算缺席）。" }
+          ]
+        },
+        {
+          "marker": "diamond",
+          "parts": [
+            { "text": "未及时响应：一年内，第一次未响应，邮件公示；第二次开始，" },
+            { "text": "100元/次", "tone": "danger" },
+            { "text": "。" }
+          ]
+        },
+        {
+          "marker": "square",
+          "parts": [
+            { "text": "水果基金缴纳给技术开发部：" },
+            { "text": "孟跃龙", "tone": "accent" },
+            { "text": "。" }
+          ]
+        }
+      ]
+    }
+  ]
+}

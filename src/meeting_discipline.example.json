@@ -1,0 +1,36 @@
+{
+  "sections": [
+    {
+      "title": "会议纪律",
+      "items": [
+        {
+          "marker": "diamond",
+          "parts": [
+            { "text": "会议纪律示例内容。" }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "会议纪律--专项规则",
+      "items": [
+        {
+          "marker": "diamond",
+          "parts": [
+            { "text": "普通文字，" },
+            { "text": "重点金额", "tone": "danger" },
+            { "text": "。" }
+          ]
+        },
+        {
+          "marker": "square",
+          "parts": [
+            { "text": "联系人：" },
+            { "text": "示例姓名", "tone": "accent" },
+            { "text": "。" }
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,4 @@
+interface:
+  display_name: "TDT 阶段快照刷新"
+  short_description: "在阶段查找导入前预览、创建或恢复 TDT 子任务周度阶段快照"
+  default_prompt: "使用 $siyuan-refresh-tdt-stage-snapshot 在导入阶段查找前预检并维护 TDT 周度阶段快照。"

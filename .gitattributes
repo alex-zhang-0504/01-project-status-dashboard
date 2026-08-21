@@ -1,0 +1,5 @@
+# 行尾跟解释器走：Windows 批处理必须 CRLF，Unix shell 脚本必须 LF
+*.cmd     text eol=crlf
+*.bat     text eol=crlf
+*.command text eol=lf
+*.sh      text eol=lf

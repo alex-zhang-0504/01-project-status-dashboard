@@ -1,0 +1,44 @@
+# Dependencies
+node_modules/
+.venv/
+venv/
+
+# Build and test output
+dist/
+build/
+coverage/
+.next/
+out/
+.vite/
+__pycache__/
+*.py[cod]
+*.log
+
+# Environment and secrets
+.env
+.env.*
+
+# Editors and local AI configuration
+.vscode/
+.idea/
+.claude/
+.codex/
+
+# Operating system files
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# Temporary files
+tmp-*
+
+# Real business data (per AGENTS.md: not committed)
+output/
+src/dashboard_config.json
+src/demo_scope.json
+src/meeting_discipline.json
+start-dashboard.cmd
+start-dashboard.command
+
+# Miaoda full-stack app is managed by its own nested Git repository
+/deployments/miaoda-app/

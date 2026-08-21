@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>饼图规范样例</title>
+<style>
+:root {
+  --ink: #363636; --muted: #787878;
+  --table-rule: #b8b8b8;
+  --chart-cat-1: #0a9bf5; --chart-cat-2: #4fb5f8; --chart-cat-3: #8ad0fb;
+  --chart-cat-4: #c2e5fd; --chart-cat-5: #8e8e8e;
+  --dashboard-font-family: "Aptos", "Segoe UI", -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", "微软雅黑", "Hiragino Sans GB", sans-serif;
+}
+body {
+  margin: 0; padding: 40px; background: #fff; color: var(--ink);
+  font-family: var(--dashboard-font-family);
+}
+.sample-title { margin: 0 0 6px; font-size: 19px; font-weight: 700; }
+.sample-note { margin: 0 0 28px; color: var(--muted); font-size: 13px; }
+.pie-label { font-size: 16px; font-weight: 400; fill: var(--ink); }
+</style>
+</head>
+<body>
+<h1 class="sample-title">TDT 项目状态分布（固定假数据）</h1>
+<p class="sample-note">按 ../../design.md 第 5 节实现：蓝阶梯 + 中性灰、12 点起始顺时针、降序、全部外部引线标签、无图例。数据为固定假数据，直接双击本文件即可查看；改上方 <code>DATA</code> 数组换数据。</p>
+<div id="pie"></div>
+
+<script>
+const DATA = [
+  { label: "开发中", value: 47 },
+  { label: "已结项", value: 31 },
+  { label: "暂停", value: 18 },
+  { label: "取消", value: 11 },
+  { label: "其它", value: 6 }
+];
+
+const R = 150;              // 半径（直径 300，规范 260–320）
+const PAD_X = 160;          // 左右留白（引线 38 + 标签约 120）
+const PAD_Y = 34;           // 上下留白 = 径向段 18 + 半行文字 10 + 余量
+const LABEL_HALF = 10;      // 半行文字高度，回夹边界用它，不用 PAD_Y
+const RADIAL = 18;          // 径向段长度
+const ELBOW = 20;           // 水平段长度
+const GAP = 8;              // 水平段末端到标签的间距
+const MIN_GAP = 22;         // 同侧相邻标签最小垂直间距
+
+function renderPie(el, data) {
+  const total = data.reduce((sum, d) => sum + d.value, 0);
+  if (!total) { el.innerHTML = '<div class="board-empty">当前没有可展示的数据</div>'; return; }
+
+  const rows = [...data].sort((a, b) => b.value - a.value);
+  const width = R * 2 + PAD_X * 2;
+  const height = R * 2 + PAD_Y * 2;
+  const cx = width / 2, cy = height / 2;
+  const rad = deg => (deg - 90) * Math.PI / 180;
+  const at = (r, deg) => [cx + r * Math.cos(rad(deg)), cy + r * Math.sin(rad(deg))];
+
+  // 扇区路径
+  let cursor = 0;
+  const slices = rows.map((row, i) => {
+    const sweep = row.value / total * 360;
+    const start = cursor, end = cursor + sweep, mid = start + sweep / 2;
+    cursor = end;
+    const [x1, y1] = at(R, start), [x2, y2] = at(R, end);
+    const large = sweep > 180 ? 1 : 0;
+    const d = sweep >= 360
+      ? `M ${cx} ${cy - R} A ${R} ${R} 0 1 1 ${cx - 0.01} ${cy - R} Z`
+      : `M ${cx} ${cy} L ${x1} ${y1} A ${R} ${R} 0 ${large} 1 ${x2} ${y2} Z`;
+    return { ...row, mid, d, color: `var(--chart-cat-${i + 1})`, pct: Math.round(row.value / total * 100) };
+  });
+
+  // 引线锚点 + 同侧防重叠推挤
+  slices.forEach(s => {
+    const [ax, ay] = at(R, s.mid);
+    const [bx, by] = at(R + RADIAL, s.mid);
+    s.anchor = [ax, ay];
+    s.elbow = [bx, by];
+    s.side = Math.cos(rad(s.mid)) >= 0 ? 1 : -1;      // 1 = 右侧
+    s.columnX = cx + s.side * (R + RADIAL + ELBOW);
+    s.labelY = by;
+  });
+  [1, -1].forEach(side => {
+    const group = slices.filter(s => s.side === side).sort((a, b) => a.labelY - b.labelY);
+    for (let i = 1; i < group.length; i++) {
+      const delta = group[i].labelY - group[i - 1].labelY;
+      if (delta < MIN_GAP) group[i].labelY = group[i - 1].labelY + MIN_GAP;
+    }
+    if (!group.length) return;
+    // 回夹边界是容器边内缩半行文字，不是 PAD_Y。用 PAD_Y 会把没冲突的标签整组挪走，水平段随之变斜
+    const bottomOver = group[group.length - 1].labelY - (height - LABEL_HALF);
+    if (bottomOver > 0) group.forEach(s => { s.labelY -= bottomOver; });
+    const topOver = LABEL_HALF - group[0].labelY;
+    if (topOver > 0) group.forEach(s => { s.labelY += topOver; });
+  });
+
+  const svg = `<svg viewBox="0 0 ${width} ${height}" width="${width}" height="${height}" role="img"
+    aria-label="${rows.map(r => `${r.label} ${Math.round(r.value / total * 100)}%`).join("，")}">
+    ${slices.map(s => `<path d="${s.d}" fill="${s.color}"></path>`).join("")}
+    ${slices.map(s => `<polyline points="${s.anchor.join(",")} ${s.elbow.join(",")} ${s.columnX},${s.labelY}"
+        fill="none" stroke="var(--table-rule)" stroke-width="1"></polyline>`).join("")}
+    ${slices.map(s => `<text class="pie-label" x="${s.columnX + s.side * GAP}" y="${s.labelY}"
+        text-anchor="${s.side === 1 ? "start" : "end"}" dominant-baseline="middle">${s.label} ${s.pct}%</text>`).join("")}
+  </svg>`;
+  el.innerHTML = svg;
+}
+
+renderPie(document.getElementById("pie"), DATA);
+</script>
+</body>
+</html>

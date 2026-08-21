@@ -1,0 +1,491 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>TDT 技术项目周例会看板</title>
+<style>
+/* ============ 配色 Token：Notion 纯白（默认） ============ */
+:root {
+  --bg: #FFFFFF; --surface: #FFFFFF; --surface-2: #F7F7F5;
+  --ink: #37352F; --muted: #787774; --line: #E3E2DE; --line-soft: #EFEFED;
+  --accent: #2383E2; --accent-soft: #E7F3F8;
+  --risk-hi: #D44C47; --risk-hi-bg: #FDEBEC;
+  --risk-mid: #B8860B; --risk-mid-bg: #FBF3DB;
+  --risk-lo: #448361; --risk-lo-bg: #EDF3EE;
+  --node-done: #37352F; --node-pend: #B9B7B1; --node-late: #D44C47;
+  --head-bg: rgba(255,255,255,.92);
+  --shadow: 0 1px 2px rgba(15,15,15,.04), 0 2px 8px rgba(15,15,15,.04);
+  --mono: "Consolas", "SF Mono", ui-monospace, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #191919; --surface: #202020; --surface-2: #262626;
+    --ink: #D4D4D4; --muted: #9B9B9B; --line: #383838; --line-soft: #2E2E2E;
+    --accent: #529CCA; --accent-soft: #253846;
+    --risk-hi: #E06C66; --risk-hi-bg: #3B2B2A;
+    --risk-mid: #D9A344; --risk-mid-bg: #383021;
+    --risk-lo: #6CAE8A; --risk-lo-bg: #263830;
+    --node-done: #D4D4D4; --node-pend: #5A5A5A; --node-late: #E06C66;
+    --head-bg: rgba(25,25,25,.92);
+    --shadow: 0 1px 3px rgba(0,0,0,.4);
+  }
+}
+:root[data-theme="light"] {
+  --bg: #FFFFFF; --surface: #FFFFFF; --surface-2: #F7F7F5;
+  --ink: #37352F; --muted: #787774; --line: #E3E2DE; --line-soft: #EFEFED;
+  --accent: #2383E2; --accent-soft: #E7F3F8;
+  --risk-hi: #D44C47; --risk-hi-bg: #FDEBEC;
+  --risk-mid: #B8860B; --risk-mid-bg: #FBF3DB;
+  --risk-lo: #448361; --risk-lo-bg: #EDF3EE;
+  --node-done: #37352F; --node-pend: #B9B7B1; --node-late: #D44C47;
+  --head-bg: rgba(255,255,255,.92);
+  --shadow: 0 1px 2px rgba(15,15,15,.04), 0 2px 8px rgba(15,15,15,.04);
+}
+:root[data-theme="dark"] {
+  --bg: #191919; --surface: #202020; --surface-2: #262626;
+  --ink: #D4D4D4; --muted: #9B9B9B; --line: #383838; --line-soft: #2E2E2E;
+  --accent: #529CCA; --accent-soft: #253846;
+  --risk-hi: #E06C66; --risk-hi-bg: #3B2B2A;
+  --risk-mid: #D9A344; --risk-mid-bg: #383021;
+  --risk-lo: #6CAE8A; --risk-lo-bg: #263830;
+  --node-done: #D4D4D4; --node-pend: #5A5A5A; --node-late: #E06C66;
+  --head-bg: rgba(25,25,25,.92);
+  --shadow: 0 1px 3px rgba(0,0,0,.4);
+}
+/* ============ 配色 Token：Claude 暖色 ============ */
+:root[data-palette="claude"] {
+  --bg: #FAF9F5; --surface: #FFFFFF; --surface-2: #F0EEE6;
+  --ink: #3D3929; --muted: #73726C; --line: #E3E0D5; --line-soft: #EDEBE1;
+  --accent: #C96442; --accent-soft: #F5E9E2;
+  --risk-hi: #BF4038; --risk-hi-bg: #F9ECE9;
+  --risk-mid: #A16E00; --risk-mid-bg: #F6EFDB;
+  --risk-lo: #3E7B52; --risk-lo-bg: #EAF1EA;
+  --node-done: #C96442; --node-pend: #C4C0B2; --node-late: #BF4038;
+  --head-bg: rgba(250,249,245,.92);
+  --shadow: 0 1px 2px rgba(61,57,41,.05), 0 2px 8px rgba(61,57,41,.05);
+}
+@media (prefers-color-scheme: dark) {
+  :root[data-palette="claude"] {
+    --bg: #262624; --surface: #30302E; --surface-2: #393937;
+    --ink: #E8E6DF; --muted: #A6A39A; --line: #47463F; --line-soft: #3A3935;
+    --accent: #D97757; --accent-soft: #453730;
+    --risk-hi: #E4766A; --risk-hi-bg: #422B27;
+    --risk-mid: #DDA24E; --risk-mid-bg: #3D3320;
+    --risk-lo: #7CBE8E; --risk-lo-bg: #2B3A2E;
+    --node-done: #D97757; --node-pend: #5C5B53; --node-late: #E4766A;
+    --head-bg: rgba(38,38,36,.92);
+    --shadow: 0 1px 3px rgba(0,0,0,.4);
+  }
+}
+:root[data-palette="claude"][data-theme="light"] {
+  --bg: #FAF9F5; --surface: #FFFFFF; --surface-2: #F0EEE6;
+  --ink: #3D3929; --muted: #73726C; --line: #E3E0D5; --line-soft: #EDEBE1;
+  --accent: #C96442; --accent-soft: #F5E9E2;
+  --risk-hi: #BF4038; --risk-hi-bg: #F9ECE9;
+  --risk-mid: #A16E00; --risk-mid-bg: #F6EFDB;
+  --risk-lo: #3E7B52; --risk-lo-bg: #EAF1EA;
+  --node-done: #C96442; --node-pend: #C4C0B2; --node-late: #BF4038;
+  --head-bg: rgba(250,249,245,.92);
+  --shadow: 0 1px 2px rgba(61,57,41,.05), 0 2px 8px rgba(61,57,41,.05);
+}
+:root[data-palette="claude"][data-theme="dark"] {
+  --bg: #262624; --surface: #30302E; --surface-2: #393937;
+  --ink: #E8E6DF; --muted: #A6A39A; --line: #47463F; --line-soft: #3A3935;
+  --accent: #D97757; --accent-soft: #453730;
+  --risk-hi: #E4766A; --risk-hi-bg: #422B27;
+  --risk-mid: #DDA24E; --risk-mid-bg: #3D3320;
+  --risk-lo: #7CBE8E; --risk-lo-bg: #2B3A2E;
+  --node-done: #D97757; --node-pend: #5C5B53; --node-late: #E4766A;
+  --head-bg: rgba(38,38,36,.92);
+  --shadow: 0 1px 3px rgba(0,0,0,.4);
+}
+
+/* ============ 基础 ============ */
+* { box-sizing: border-box; }
+body {
+  background: var(--bg); color: var(--ink); margin: 0; padding: 0;
+  font-family: "Microsoft YaHei", "微软雅黑", "PingFang SC", system-ui, sans-serif;
+  font-size: 14px; line-height: 1.65;
+  transition: background .2s, color .2s;
+}
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
+button { font: inherit; }
+[hidden] { display: none !important; }
+
+/* ============ 吸顶头部 ============ */
+.sticky-head {
+  position: sticky; top: 0; z-index: 10; background: var(--head-bg);
+  backdrop-filter: blur(8px); border-bottom: 1px solid var(--line);
+}
+.head-inner { max-width: 1120px; margin: 0 auto; padding: 0 24px; }
+.topbar { display: flex; align-items: center; gap: 14px; padding: 14px 0 10px; flex-wrap: wrap; }
+.topbar h1 { font-size: 18px; font-weight: 700; margin: 0; letter-spacing: .01em; }
+.topbar .meta { font-size: 12.5px; color: var(--muted); }
+.topbar .meta b { color: var(--ink); font-weight: 600; }
+.src-tag {
+  font-size: 11px; color: var(--muted); border: 1px solid var(--line);
+  border-radius: 4px; padding: 1px 7px; letter-spacing: .05em;
+}
+.spacer { flex: 1; }
+.palette-btn {
+  border: 1px solid var(--line); background: var(--surface); color: var(--ink);
+  border-radius: 6px; padding: 5px 12px; font-size: 12.5px; cursor: pointer;
+  display: inline-flex; align-items: center; gap: 7px;
+}
+.palette-btn:hover { border-color: var(--accent); color: var(--accent); }
+.palette-dot { width: 12px; height: 12px; border-radius: 50%; background: var(--accent); display: inline-block; }
+
+/* AI 看板按钮：初始高亮呼吸光晕，生成后转常规描边态 */
+.ai-btn {
+  border: none; background: var(--accent); color: var(--bg);
+  border-radius: 6px; padding: 6px 14px; font-size: 13px; font-weight: 600;
+  cursor: pointer; display: inline-flex; align-items: center; gap: 6px;
+  animation: ai-glow 2s ease-in-out infinite; transition: transform .15s;
+}
+.ai-btn:hover { transform: translateY(-1px); }
+.ai-btn:disabled { opacity: .75; cursor: default; animation: none; }
+.ai-btn.done {
+  background: var(--surface); color: var(--accent);
+  border: 1px solid var(--accent); font-weight: 400; animation: none;
+}
+.ai-btn.loading .ai-ic { animation: ai-spin 1s linear infinite; }
+@keyframes ai-glow {
+  0%, 100% { box-shadow: 0 0 4px 0 var(--accent-soft); }
+  50% { box-shadow: 0 0 16px 2px var(--accent); }
+}
+@keyframes ai-spin { to { transform: rotate(360deg); } }
+
+/* 生成前空态 / 生成中动效 */
+.stage { max-width: 1120px; margin: 0 auto; padding: 140px 24px; text-align: center; color: var(--muted); font-size: 14px; }
+.stage-dots { display: flex; gap: 7px; justify-content: center; margin-bottom: 16px; }
+.stage-dots i { width: 9px; height: 9px; border-radius: 50%; background: var(--accent); animation: ai-bounce 1s ease-in-out infinite; }
+.stage-dots i:nth-child(2) { animation-delay: .15s; }
+.stage-dots i:nth-child(3) { animation-delay: .3s; }
+@keyframes ai-bounce { 0%, 100% { transform: translateY(0); opacity: .45; } 50% { transform: translateY(-7px); opacity: 1; } }
+
+/* 生成完成揭示动画 */
+.reveal { animation: ai-rise .4s ease-out both; }
+@keyframes ai-rise { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+
+.toolrow { display: flex; align-items: center; gap: 8px; padding: 0 0 12px; flex-wrap: wrap; }
+.chip {
+  border: 1px solid var(--line); background: var(--surface); color: var(--ink);
+  border-radius: 999px; padding: 4px 13px; font-size: 13px; cursor: pointer;
+  display: inline-flex; align-items: center; gap: 6px; line-height: 1.4;
+}
+.chip:hover { border-color: var(--accent); }
+.chip.active { background: var(--ink); border-color: var(--ink); color: var(--bg); }
+.chip .n { font-variant-numeric: tabular-nums; font-weight: 600; }
+.chip .dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+.chip .dot.hi { background: var(--risk-hi); } .chip .dot.mid { background: var(--risk-mid); } .chip .dot.lo { background: var(--risk-lo); }
+.tool-sep { width: 1px; height: 20px; background: var(--line); margin: 0 6px; }
+.pm-nav { display: flex; gap: 6px; overflow-x: auto; flex: 1; min-width: 0; }
+.pm-chip {
+  border: none; background: none; color: var(--muted); font-size: 13px;
+  padding: 4px 10px; border-radius: 6px; cursor: pointer; white-space: nowrap;
+}
+.pm-chip:hover { background: var(--surface-2); color: var(--ink); }
+
+/* ============ 主体 ============ */
+.wrap { max-width: 1120px; margin: 0 auto; padding: 26px 24px 80px; }
+.pm-section { margin-bottom: 38px; }
+.pm-head {
+  display: flex; align-items: baseline; gap: 14px; padding: 6px 2px 10px;
+  border-bottom: 2px solid var(--ink); cursor: pointer; user-select: none;
+}
+.pm-head .caret { font-size: 12px; color: var(--muted); transition: transform .15s; display: inline-block; }
+.pm-section.collapsed .caret { transform: rotate(-90deg); }
+.pm-head .pm-name { font-size: 17px; font-weight: 700; }
+.pm-head .pm-stat { font-size: 13px; color: var(--muted); }
+.pm-head .pm-stat i { font-style: normal; font-weight: 600; }
+.pm-head .hi { color: var(--risk-hi); } .pm-head .mid { color: var(--risk-mid); } .pm-head .lo { color: var(--risk-lo); }
+.pm-body { padding-top: 14px; }
+.pm-section.collapsed .pm-body { display: none; }
+
+/* 卡片 */
+.card {
+  border: 1px solid var(--line); border-radius: 8px; background: var(--surface);
+  box-shadow: var(--shadow); margin-bottom: 14px; overflow: hidden;
+}
+.card.hidden { display: none; }
+.card-head { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 14px; padding: 13px 18px 10px; }
+.card-head .tdt-line { flex-basis: 100%; font-size: 12.5px; color: var(--muted); }
+.card-head .name { font-size: 15px; font-weight: 700; }
+.card-head .upd { margin-left: auto; font-size: 11.5px; color: var(--muted); font-family: var(--mono); }
+
+/* 上半区：里程碑 + 控制点，与下半三栏共用等宽分栏（中线上下对齐） */
+.grid-top { display: grid; grid-template-columns: 1fr 1fr 1fr; border-top: 1px solid var(--line-soft); }
+.grid-top > div { padding: 12px 18px 10px; }
+.grid-top > div + div { border-left: 1px solid var(--line-soft); }
+.grid-top .cps-cell { grid-column: 2 / 4; }
+.grid-top .ms-cell { display: flex; align-items: center; }
+.code { font-family: var(--mono); font-size: 12.5px; color: var(--muted); letter-spacing: .02em; }
+.badge {
+  display: inline-block; font-size: 12px; font-weight: 600; line-height: 1;
+  padding: 4px 10px; border-radius: 999px; white-space: nowrap;
+}
+.badge.stage { background: var(--surface-2); color: var(--ink); border: 1px solid var(--line-soft); }
+.badge.hi  { background: var(--risk-hi-bg); color: var(--risk-hi); }
+.badge.mid { background: var(--risk-mid-bg); color: var(--risk-mid); }
+.badge.lo  { background: var(--risk-lo-bg); color: var(--risk-lo); }
+.badge.none { background: var(--surface-2); color: var(--muted); border: 1px solid var(--line-soft); }
+
+/* 里程碑线 */
+.ms { display: flex; min-width: 260px; max-width: 440px; flex: 1; }
+.ms-item { flex: 1; position: relative; text-align: center; padding-top: 2px; }
+.ms-item::before {
+  content: ""; position: absolute; top: 7px; right: 50%; width: 100%; height: 2px;
+  background: var(--node-pend); opacity: .5;
+}
+.ms-item.done::before { background: var(--node-done); opacity: 1; }
+.ms-item:first-child::before { display: none; }
+.ms-dot {
+  position: relative; z-index: 1; display: inline-block; width: 11px; height: 11px;
+  border-radius: 50%; background: var(--surface); border: 2px solid var(--node-pend);
+}
+.ms-item.done .ms-dot { background: var(--node-done); border-color: var(--node-done); }
+.ms-item.late .ms-dot { border-color: var(--node-late); }
+.ms-lab { font-size: 12px; color: var(--muted); line-height: 1.5; margin-top: 3px; }
+.ms-date { font-family: var(--mono); font-size: 12px; color: var(--ink); font-variant-numeric: tabular-nums; }
+.ms-item.late .ms-date { color: var(--node-late); font-weight: 700; }
+.ms-item.late .ms-lab::after { content: " 延期"; color: var(--node-late); font-weight: 600; }
+
+/* 控制点（常开展示） */
+.cps { font-size: 14px; }
+.cps h4 { margin: 0 0 5px; font-size: 13px; font-weight: 600; color: var(--muted); letter-spacing: .08em; }
+.cps ol { margin: 0; padding-left: 22px; line-height: 1.85; columns: 2; column-gap: 40px; max-width: 560px; }
+@media (max-width: 700px) { .cps ol { columns: 1; } }
+
+/* 进展三栏 */
+.tri { display: grid; grid-template-columns: 1fr 1fr 1fr; border-top: 1px solid var(--line-soft); }
+.tri > div { padding: 11px 18px 6px; font-size: 14px; }
+.tri > div + div { border-left: 1px solid var(--line-soft); }
+.tri h4 { margin: 0 0 5px; font-size: 13px; font-weight: 600; color: var(--muted); letter-spacing: .08em; }
+.tri ul { margin: 0; padding-left: 18px; }
+.tri li { margin-bottom: 4px; white-space: pre-wrap; }
+.tri .risk-txt li { color: var(--risk-hi); }
+.tri .none { color: var(--muted); margin: 0; }
+@media (max-width: 760px) {
+  .tri, .grid-top { grid-template-columns: 1fr; }
+  .tri > div + div, .grid-top > div + div { border-left: none; border-top: 1px solid var(--line-soft); }
+  .grid-top .cps-cell { grid-column: auto; }
+}
+
+footer {
+  max-width: 1120px; margin: 0 auto; padding: 0 24px 40px;
+  font-size: 12px; color: var(--muted);
+}
+</style>
+</head>
+<body>
+
+<div class="sticky-head">
+  <div class="head-inner">
+    <div class="topbar">
+      <h1>TDT 技术项目周例会看板</h1>
+      <span class="meta" id="meta"></span>
+      <span class="src-tag" id="src-tag"></span>
+      <span class="spacer"></span>
+      <button class="ai-btn" id="ai-btn"><svg class="ai-ic" width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2l2.5 7.5L22 12l-7.5 2.5L12 22l-2.5-7.5L2 12l7.5-2.5z"/></svg><span id="ai-btn-text">AI 看板</span></button>
+      <button class="palette-btn" id="palette-btn"><span class="palette-dot"></span><span id="palette-name">Notion 纯白</span></button>
+    </div>
+    <div class="toolrow" id="toolrow" hidden>
+      <span id="filters" style="display:contents"></span>
+      <span class="tool-sep"></span>
+      <nav class="pm-nav" id="pm-nav"></nav>
+    </div>
+  </div>
+</div>
+
+<div class="stage" id="stage">
+  <div class="stage-dots" id="stage-dots" hidden><i></i><i></i><i></i></div>
+  <p id="stage-hint">点击右上角「AI 看板」，生成本周项目状态</p>
+</div>
+
+<div class="wrap" id="board" hidden></div>
+
+<footer id="foot" hidden></footer>
+
+<script>
+let DATA = /*__DATA__*/null;
+
+const RISK_CLS = { "高风险": "hi", "中风险": "mid", "低风险": "lo" };
+
+function esc(s) {
+  return String(s == null ? "" : s)
+    .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;").replace(/'/g, "&#39;");
+}
+function riskCls(risk) { return RISK_CLS[risk] || "none"; }
+
+function msHtml(ms) {
+  return '<div class="ms">' + ms.map(m =>
+    `<div class="ms-item ${m.st === "done" ? "done" : ""} ${m.st === "late" ? "late" : ""}">
+       <span class="ms-dot"></span>
+       <div class="ms-lab">${esc(m.lab)}<br><span class="ms-date">${esc(m.date)}</span></div>
+     </div>`).join("") + "</div>";
+}
+function cpsHtml(cps) {
+  if (!cps || !cps.length) return '<div class="cps"><h4>控制点</h4><span class="code">—</span></div>';
+  return `<div class="cps"><h4>控制点 · ${cps.length} 项</h4>
+    <ol>${cps.map(c => `<li>${esc(c)}</li>`).join("")}</ol></div>`;
+}
+function listHtml(arr, cls) {
+  if (!arr || !arr.length) return `<p class="none">/</p>`;
+  return `<ul class="${cls || ""}">${arr.map(x => `<li>${esc(x)}</li>`).join("")}</ul>`;
+}
+function cardHtml(p) {
+  return `<div class="card" data-risk="${esc(p.risk)}">
+    <div class="card-head">
+      ${p.tdt ? `<span class="tdt-line">TDT · ${esc(p.tdt)}</span>` : ""}
+      <span class="name">${esc(p.name)}</span><span class="code">${esc(p.code)}</span>
+      <span class="badge stage">${esc(p.stage)}</span><span class="badge ${riskCls(p.risk)}">${esc(p.risk)}</span>
+      ${p.upd ? `<span class="upd">更新 ${esc(p.upd)}</span>` : ""}
+    </div>
+    <div class="grid-top">
+      <div class="ms-cell">${msHtml(p.ms)}</div>
+      <div class="cps-cell">${cpsHtml(p.cps)}</div>
+    </div>
+    <div class="tri">
+      <div><h4>本周进展</h4>${listHtml(p.week)}</div>
+      <div><h4>下周计划</h4>${listHtml(p.next)}</div>
+      <div class="risk-txt"><h4>风险</h4>${listHtml(p.riskDesc)}</div>
+    </div>
+  </div>`;
+}
+function pmStat(projects) {
+  const c = { "高风险": 0, "中风险": 0, "低风险": 0 };
+  projects.forEach(p => { if (c[p.risk] != null) c[p.risk]++; });
+  const parts = [];
+  if (c["高风险"]) parts.push(`<i class="hi">高 ${c["高风险"]}</i>`);
+  if (c["中风险"]) parts.push(`<i class="mid">中 ${c["中风险"]}</i>`);
+  if (c["低风险"]) parts.push(`<i class="lo">低 ${c["低风险"]}</i>`);
+  return `${projects.length} 个项目${parts.length ? " · " + parts.join(" / ") : ""}`;
+}
+
+/* 数据装配：首次加载与每次真实刷新共用（头部信息、筛选、看板、导航、折叠） */
+function hydrate(data) {
+  DATA = data;
+  document.getElementById("meta").innerHTML = `<b>${esc(DATA.week)}</b>　数据截至 ${esc(DATA.generatedAt)}`;
+  document.getElementById("src-tag").textContent = DATA.viewName;
+  document.getElementById("foot").textContent =
+    `数据来源：飞书多维表格「${DATA.viewName}」 · 脚本一键生成，项目经理无需操作看板 · 生成于 ${DATA.generatedAt}`;
+
+  const allProjects = DATA.groups.flatMap(g => g.projects);
+  const counts = { "高风险": 0, "中风险": 0, "低风险": 0 };
+  allProjects.forEach(p => { if (counts[p.risk] != null) counts[p.risk]++; });
+  document.getElementById("filters").innerHTML =
+    `<button class="chip active" data-f="all">全部 <span class="n">${allProjects.length}</span></button>` +
+    Object.keys(counts).filter(k => counts[k] > 0).map(k =>
+      `<button class="chip" data-f="${k}"><span class="dot ${RISK_CLS[k]}"></span>${k} <span class="n">${counts[k]}</span></button>`).join("");
+
+  document.getElementById("board").innerHTML = DATA.groups.map((g, i) => `
+    <section class="pm-section" id="pm-${i}">
+      <div class="pm-head" role="button" tabindex="0">
+        <span class="caret">▾</span>
+        <span class="pm-name">${esc(g.pm)}</span>
+        <span class="pm-stat">${pmStat(g.projects)}</span>
+      </div>
+      <div class="pm-body">${g.projects.map(cardHtml).join("")}</div>
+    </section>`).join("");
+
+  document.getElementById("pm-nav").innerHTML =
+    DATA.groups.map((g, i) => `<button class="pm-chip" data-target="pm-${i}">${esc(g.pm)}</button>`).join("");
+  document.querySelectorAll(".pm-chip[data-target]").forEach(b =>
+    b.addEventListener("click", () => document.getElementById(b.dataset.target).scrollIntoView({ behavior: "smooth", block: "start" })));
+
+  document.querySelectorAll(".pm-head").forEach(h => {
+    const toggle = () => h.parentElement.classList.toggle("collapsed");
+    h.addEventListener("click", toggle);
+    h.addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); toggle(); } });
+  });
+
+  document.querySelectorAll(".chip[data-f]").forEach(chip => chip.addEventListener("click", () => {
+    document.querySelectorAll(".chip[data-f]").forEach(c => c.classList.remove("active"));
+    chip.classList.add("active");
+    const f = chip.dataset.f;
+    document.querySelectorAll(".card").forEach(card =>
+      card.classList.toggle("hidden", f !== "all" && card.dataset.risk !== f));
+    document.querySelectorAll(".pm-section").forEach(sec => {
+      const any = sec.querySelectorAll(".card:not(.hidden)").length > 0;
+      sec.style.display = any ? "" : "none";
+    });
+  }));
+}
+
+hydrate(DATA);
+
+/* AI 看板按钮：本地服务(http)模式下每次点击真实重读多维总表；
+   file:// 双击打开时退回内嵌快照 + 模拟 3s 延时 */
+const aiBtn = document.getElementById("ai-btn");
+const aiText = document.getElementById("ai-btn-text");
+const stageEl = document.getElementById("stage");
+const stageDots = document.getElementById("stage-dots");
+const stageHint = document.getElementById("stage-hint");
+const gated = [document.getElementById("toolrow"), document.getElementById("board"), document.getElementById("foot")];
+const SERVED = location.protocol === "http:" || location.protocol === "https:";
+let generated = false;
+
+function setLoading() {
+  aiBtn.disabled = true;
+  aiBtn.classList.add("loading");
+  aiText.textContent = "生成中…";
+  gated.forEach(el => { el.hidden = true; el.classList.remove("reveal"); });
+  stageEl.hidden = false;
+  stageDots.hidden = false;
+  stageHint.textContent = SERVED ? "AI 正在读取多维总表并汇总最新项目状态…" : "AI 正在汇总本周项目状态…";
+}
+
+function reveal() {
+  stageEl.hidden = true;
+  stageDots.hidden = true;
+  gated.forEach((el, i) => {
+    el.hidden = false;
+    el.style.animationDelay = (i * 0.08) + "s";
+    el.classList.add("reveal");
+  });
+  aiBtn.disabled = false;
+  aiBtn.classList.remove("loading");
+  aiBtn.classList.add("done");
+  aiText.textContent = "重新生成";
+  generated = true;
+}
+
+aiBtn.addEventListener("click", async () => {
+  if (aiBtn.disabled) return;
+  setLoading();
+  if (SERVED) {
+    try {
+      const res = await fetch("/api/data", { cache: "no-store" });
+      if (!res.ok) {
+        let msg = "HTTP " + res.status;
+        try { msg = (await res.json()).error || msg; } catch (e) {}
+        throw new Error(msg);
+      }
+      hydrate(await res.json());
+    } catch (err) {
+      stageDots.hidden = true;
+      stageHint.textContent = "刷新失败：" + err.message + (generated ? "（继续显示上次数据）" : "（显示页面内置快照）");
+      setTimeout(reveal, 1500);
+      return;
+    }
+  } else {
+    const wait = matchMedia("(prefers-reduced-motion: reduce)").matches ? 0 : 3000;
+    await new Promise(resolve => setTimeout(resolve, wait));
+  }
+  reveal();
+});
+
+/* 配色切换 */
+document.getElementById("palette-btn").addEventListener("click", () => {
+  const root = document.documentElement;
+  const isClaude = root.getAttribute("data-palette") === "claude";
+  if (isClaude) { root.removeAttribute("data-palette"); }
+  else { root.setAttribute("data-palette", "claude"); }
+  document.getElementById("palette-name").textContent = isClaude ? "Notion 纯白" : "Claude 暖色";
+});
+</script>
+</body>
+</html>

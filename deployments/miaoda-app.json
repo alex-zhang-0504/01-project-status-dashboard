@@ -1,0 +1,14 @@
+{
+  "app_id": "app_17b7awscgpe",
+  "app_name": "TDT技术项目状态看板",
+  "app_type": "full_stack",
+  "local_path": "deployments/miaoda-app",
+  "development_branch": "sprint/default",
+  "last_verified_commit": "ff1def1",
+  "last_release_id": "7673379105845677006",
+  "status": "v1.3.0_release_and_development_preview_smoke_verified",
+  "development_preview_source_commit": "ff1def1",
+  "cloud_workspace_head": "b27e66c",
+  "cloud_workspace_checkpoint_commits": ["a01574e", "b27e66c"],
+  "cloud_workspace_checkpoint_status": "local_only_not_pushed_or_released"
+}
