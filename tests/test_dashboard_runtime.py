@@ -6,6 +6,7 @@ import sys
 import tempfile
 import threading
 import unittest
+from urllib.error import HTTPError
 from urllib.request import urlopen
 from pathlib import Path
 from types import SimpleNamespace
@@ -93,13 +94,68 @@ class LocalServiceIdentityTests(unittest.TestCase):
 
 
 class MappedBaseValueTests(unittest.TestCase):
+    def test_optional_tdr_and_unmapped_special_dates_are_not_required(self) -> None:
+        optional_fields = {
+            "价值决策",
+            "TDR1计划",
+            "TDR1实际",
+            "TDR2计划",
+            "TDR2实际",
+            "TDR3预计",
+            "TDR3实际",
+            "专一",
+            "专二",
+            "专三",
+            "专四",
+            "验收",
+        }
+        self.assertTrue(optional_fields.isdisjoint(gd.REQUIRED_FIELDS))
+
+    def test_missing_optional_tdr_fields_render_values_and_titles_blank(self) -> None:
+        project = gd.build_project(
+            {
+                "TDT/子任务名称": "缺字段任务",
+                "项目编码": "TDT-OPTIONAL",
+                "风险状态": "低风险",
+                "阶段控制点": "",
+                "最新进展描述": "",
+                "项目风险": "",
+            },
+            {"TDT PM": "负责人"},
+            "父项目",
+            dt.date(2026, 9, 2),
+            [],
+        )
+        self.assertEqual(project["valueDecision"], "")
+        self.assertEqual(project["closeDate"], "")
+        self.assertTrue(all(item["date"] == "" for item in project["ms"]))
+        self.assertEqual(
+            gd.build_field_titles(["TDR3预计"]),
+            {
+                "valueDecision": "",
+                "closeDate": "结项时间",
+                "startMilestone": "",
+                "tdr1Milestone": "",
+                "tdr2Milestone": "",
+                "tdr3Milestone": "",
+            },
+        )
+
+    def test_milestone_title_requires_both_plan_and_actual_source_fields(self) -> None:
+        titles = gd.build_field_titles(["TDR1计划", "TDR2计划", "TDR3预计"])
+
+        self.assertEqual("结项时间", titles["closeDate"])
+        self.assertEqual("", titles["tdr1Milestone"])
+        self.assertEqual("", titles["tdr2Milestone"])
+        self.assertEqual("", titles["tdr3Milestone"])
+
     def test_tdr2_plan_field_prefers_current_name_and_accepts_legacy_alias(self) -> None:
-        current = gd.resolve_field_names(list(gd.REQUIRED_FIELDS) + ["TDR2(KO)"])
+        current = gd.resolve_field_names(list(gd.MAPPED_FIELDS) + ["TDR2(KO)"])
         self.assertEqual(current[gd.TDR2_PLAN_FIELD], gd.TDR2_PLAN_FIELD)
 
         legacy_fields = [
             "TDR2(KO)" if field == gd.TDR2_PLAN_FIELD else field
-            for field in gd.REQUIRED_FIELDS
+            for field in gd.MAPPED_FIELDS
         ]
         legacy = gd.resolve_field_names(legacy_fields)
         self.assertEqual(legacy[gd.TDR2_PLAN_FIELD], "TDR2(KO)")
@@ -621,7 +677,7 @@ class DashboardConfigTests(unittest.TestCase):
 class DashboardYearTests(unittest.TestCase):
     def test_dashboard_year_uses_calendar_year_not_iso_week_year(self) -> None:
         with (
-            mock.patch.object(gd, "get_view_name", return_value=gd.EXPECTED_VIEW_NAME),
+            mock.patch.object(gd, "get_view_name", return_value="已重命名的总表视图"),
             mock.patch.object(gd, "run_lark_field_list", return_value={"data": {"fields": []}}),
             mock.patch.object(gd, "scan_records", return_value=[]),
             mock.patch.object(gd, "match_field_tasks", return_value=[]),
@@ -644,6 +700,54 @@ class DashboardYearTests(unittest.TestCase):
 
         self.assertEqual(data["dashboardYear"], 2027)
         self.assertTrue(data["week"].startswith("2026 · W"))
+        self.assertEqual(data["viewName"], "已重命名的总表视图")
+
+
+class ApiErrorContractTests(unittest.TestCase):
+    def test_local_api_separates_contract_upstream_and_unknown_errors(self) -> None:
+        self.assertEqual(
+            server.api_error_response(gd.DataContractError("总表字段错误"))[:2],
+            (422, "VALIDATION_ERROR"),
+        )
+        self.assertEqual(
+            server.api_error_response(gd.UpstreamServiceError("Base 不可用"))[:2],
+            (503, "SERVICE_UNAVAILABLE"),
+        )
+        self.assertEqual(
+            server.api_error_response(RuntimeError("未知异常"))[:2],
+            (500, "INTERNAL_ERROR"),
+        )
+
+    def test_local_api_returns_distinct_http_error_payloads(self) -> None:
+        cases = [
+            (gd.DataContractError("总表字段错误"), 422, "VALIDATION_ERROR", "总表字段错误"),
+            (gd.UpstreamServiceError("Base 不可用"), 503, "SERVICE_UNAVAILABLE", "Base 不可用"),
+            (RuntimeError("内部细节"), 500, "INTERNAL_ERROR", "服务器内部错误"),
+        ]
+
+        for error, expected_status, expected_code, expected_message in cases:
+            with self.subTest(expected_code=expected_code):
+                httpd = server.DashboardHTTPServer(("127.0.0.1", 0), server.Handler)
+                thread = threading.Thread(target=httpd.handle_request)
+                thread.start()
+                try:
+                    with mock.patch.object(server, "fetch_data", side_effect=error):
+                        with self.assertRaises(HTTPError) as raised:
+                            urlopen(
+                                f"http://127.0.0.1:{httpd.server_address[1]}/api/data",
+                                timeout=2,
+                            )
+                        try:
+                            payload = json.load(raised.exception)
+                        finally:
+                            raised.exception.close()
+                finally:
+                    thread.join(timeout=2)
+                    httpd.server_close()
+
+                self.assertEqual(expected_status, raised.exception.code)
+                self.assertEqual(expected_code, payload["error"]["code"])
+                self.assertEqual(expected_message, payload["error"]["message"])
 
 
 class OfflineSnapshotFilenameTests(unittest.TestCase):

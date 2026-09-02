@@ -9,17 +9,29 @@ assert.doesNotMatch(template, /EMPTY_CELL_PLACEHOLDERS/);
 const riskClassBlock = template.match(/const RISK_CLS = \{[^\n]+\};/)?.[0];
 const helperBlock = template.match(/function esc\(value\) \{[\s\S]*?(?=\nfunction projectOverviewView\(\))/)?.[0];
 const taskRowBlock = template.match(/function taskRow\(project\) \{[\s\S]*?(?=\nfunction tdtSection\(tdt\))/)?.[0];
+const headerRowBlock = template.match(/function headerRow\(\) \{[\s\S]*?(?=\nfunction taskRow\(project\))/)?.[0];
 const issueRowBlock = template.match(/function issueRow\(issue\) \{[\s\S]*?(?=\nfunction issueTable\(group\))/)?.[0];
 
 assert.ok(riskClassBlock, "未找到风险徽章映射");
 assert.ok(helperBlock, "未找到表格空值渲染函数");
 assert.ok(taskRowBlock, "未找到详细进展表格行函数");
+assert.ok(headerRowBlock, "未找到详细进展表头函数");
 assert.ok(issueRowBlock, "未找到遗留问题表格行函数");
 
 const loadRenderers = new Function(`${riskClassBlock}\n${helperBlock}\n${taskRowBlock}\n${issueRowBlock}; return {
   cellText, listHtml, textHtml, issueTaskHtml, peopleHtml, taskRow, issueRow
 };`);
 const { cellText, listHtml, textHtml, issueTaskHtml, peopleHtml, taskRow, issueRow } = loadRenderers();
+const loadHeaderRow = new Function("DATA", `${headerRowBlock}; return headerRow;`);
+
+const defaultHeader = loadHeaderRow({})();
+assert.match(defaultHeader, />价值决策</);
+assert.match(defaultHeader, />结项时间</);
+const missingDateHeader = loadHeaderRow({ fieldTitles: { valueDecision: "", closeDate: "" } })();
+const missingDateLabels = [...missingDateHeader.matchAll(/role="columnheader">([^<]*)<\/div>/g)]
+  .map(match => match[1]);
+assert.equal(missingDateLabels[1], "");
+assert.equal(missingDateLabels[2], "");
 
 for (const value of [null, undefined, "", "   "]) {
   assert.equal(cellText(value), "");

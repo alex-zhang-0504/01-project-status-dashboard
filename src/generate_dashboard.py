@@ -33,7 +33,6 @@ from pathlib import Path
 from typing import Any, Callable
 from urllib.parse import parse_qs, urlparse
 
-EXPECTED_VIEW_NAME = "TDT技术项目总表"
 RECORD_TYPE_FIELD = "TDT/子任务"
 TDT_RECORD_TYPE = "TDT"
 CHILD_RECORD_TYPE = "子任务"
@@ -68,13 +67,6 @@ REQUIRED_FIELDS = [
     PRODUCT_GENERATION_FIELD,
     "父记录",
     "项目编码",
-    VALUE_DECISION_FIELD,
-    "TDR1计划",
-    "TDR1实际",
-    TDR2_PLAN_FIELD,
-    "TDR2实际",
-    "TDR3预计",
-    "TDR3实际",
     RISK_STATUS_FIELD,
     STAGE_FIELD,
     CONTROL_POINT_FIELD,
@@ -86,6 +78,17 @@ REQUIRED_FIELDS = [
     "子任务 PM",
     "最近更新时间",
 ]
+
+OPTIONAL_TDR_FIELDS = [
+    VALUE_DECISION_FIELD,
+    "TDR1计划",
+    "TDR1实际",
+    TDR2_PLAN_FIELD,
+    "TDR2实际",
+    "TDR3预计",
+    "TDR3实际",
+]
+MAPPED_FIELDS = [*REQUIRED_FIELDS, *OPTIONAL_TDR_FIELDS]
 
 FIELD_ALIASES = {
     TDR2_PLAN_FIELD: ("TDR2(KO)",),
@@ -158,6 +161,14 @@ class SkillError(RuntimeError):
     pass
 
 
+class DataContractError(SkillError):
+    pass
+
+
+class UpstreamServiceError(SkillError):
+    pass
+
+
 def log(logs: list[str], message: str) -> None:
     line = f"[{dt.datetime.now().strftime('%H:%M:%S')}] {message}"
     logs.append(line)
@@ -181,7 +192,7 @@ def parse_base_link(link: str) -> tuple[str, str | None, str | None]:
     parsed = urlparse(link)
     match = re.search(r"/base/([^/?#]+)", parsed.path)
     if not match:
-        raise SkillError("无法从 Base 链接解析 base-token，请检查链接格式")
+        raise UpstreamServiceError("无法从 Base 链接解析 base-token，请检查链接格式")
     query = parse_qs(parsed.query)
     table_id = query.get("table", [None])[0]
     view_id = query.get("view", [None])[0]
@@ -320,7 +331,7 @@ def resolve_field_names(actual_fields: list[str]) -> dict[str, str]:
     for actual in actual_fields:
         tolerant_index.setdefault(normalize_match_key(strip_field_suffix(actual)), actual)
     resolved: dict[str, str] = {}
-    for canonical in REQUIRED_FIELDS:
+    for canonical in MAPPED_FIELDS:
         candidates = (canonical, *FIELD_ALIASES.get(canonical, ()))
         exact = next((candidate for candidate in candidates if candidate in actual_set), None)
         if exact:
@@ -337,6 +348,19 @@ def resolve_field_names(actual_fields: list[str]) -> dict[str, str]:
         if actual:
             resolved[canonical] = actual
     return resolved
+
+
+def build_field_titles(actual_fields: list[str]) -> dict[str, str]:
+    """字段不存在时同步清空看板可见表头和阶段标题。"""
+    available = set(resolve_field_names(actual_fields))
+    return {
+        "valueDecision": "价值决策" if VALUE_DECISION_FIELD in available else "",
+        "closeDate": "结项时间" if "TDR3预计" in available else "",
+        "startMilestone": "启动" if VALUE_DECISION_FIELD in available else "",
+        "tdr1Milestone": "TDR1" if {"TDR1计划", "TDR1实际"}.issubset(available) else "",
+        "tdr2Milestone": "TDR2" if {TDR2_PLAN_FIELD, "TDR2实际"}.issubset(available) else "",
+        "tdr3Milestone": "TDR3" if {"TDR3预计", "TDR3实际"}.issubset(available) else "",
+    }
 
 
 # copied from weeklyreport
@@ -565,16 +589,16 @@ def run_lark_record_list(
     proc = subprocess.run(cmd, capture_output=True, text=True, encoding="utf-8", errors="replace")
     if proc.returncode != 0:
         detail = redact_secret(proc.stderr or proc.stdout, base_token)
-        raise SkillError(f"lark-cli record-list 失败：{detail}")
+        raise UpstreamServiceError(f"lark-cli record-list 失败：{detail}")
     try:
         payload = json.loads(proc.stdout)
     except json.JSONDecodeError as error:
-        raise SkillError("lark-cli record-list 返回了无法解析的 JSON") from error
+        raise UpstreamServiceError("lark-cli record-list 返回了无法解析的 JSON") from error
     if not isinstance(payload, dict):
-        raise SkillError("lark-cli record-list 返回的 JSON 顶层不是对象")
+        raise UpstreamServiceError("lark-cli record-list 返回的 JSON 顶层不是对象")
     if not payload.get("ok"):
         message = lark_error_message(payload, base_token)
-        raise SkillError(f"读取 Base 记录失败：{message}")
+        raise UpstreamServiceError(f"读取 Base 记录失败：{message}")
     return payload
 
 
@@ -612,19 +636,19 @@ def run_lark_record_created_time_page(
     proc = subprocess.run(cmd, capture_output=True, text=True, encoding="utf-8", errors="replace")
     if proc.returncode != 0:
         detail = redact_secret(proc.stderr or proc.stdout, base_token)
-        raise SkillError(f"读取 Base 记录系统创建时间失败：{detail}")
+        raise UpstreamServiceError(f"读取 Base 记录系统创建时间失败：{detail}")
     try:
         payload = json.loads(proc.stdout)
     except json.JSONDecodeError as error:
-        raise SkillError("查询 Base 记录系统创建时间返回了无法解析的 JSON") from error
+        raise UpstreamServiceError("查询 Base 记录系统创建时间返回了无法解析的 JSON") from error
     if not isinstance(payload, dict):
-        raise SkillError("查询 Base 记录系统创建时间返回的 JSON 顶层不是对象")
+        raise UpstreamServiceError("查询 Base 记录系统创建时间返回的 JSON 顶层不是对象")
     if not payload.get("ok"):
         message = lark_error_message(payload, base_token)
-        raise SkillError(f"读取 Base 记录系统创建时间失败：{message}")
+        raise UpstreamServiceError(f"读取 Base 记录系统创建时间失败：{message}")
     data = payload.get("data")
     if not isinstance(data, dict):
-        raise SkillError("查询 Base 记录系统创建时间返回结果缺少 data")
+        raise UpstreamServiceError("查询 Base 记录系统创建时间返回结果缺少 data")
     return data
 
 
@@ -654,7 +678,7 @@ def scan_record_created_times(
         )
         items = data.get("items", [])
         if not isinstance(items, list):
-            raise SkillError("查询 Base 记录系统创建时间返回的 items 不是数组")
+            raise UpstreamServiceError("查询 Base 记录系统创建时间返回的 items 不是数组")
         for item in items:
             if not isinstance(item, dict):
                 continue
@@ -665,7 +689,7 @@ def scan_record_created_times(
             break
         next_token = str(data.get("page_token", "")).strip()
         if not next_token:
-            raise SkillError("查询 Base 记录系统创建时间失败：分页响应缺少 page_token")
+            raise UpstreamServiceError("查询 Base 记录系统创建时间失败：分页响应缺少 page_token")
         page_token = next_token
         page_number += 1
         if page_delay > 0:
@@ -689,16 +713,16 @@ def run_lark_field_list(
     proc = subprocess.run(cmd, capture_output=True, text=True, encoding="utf-8", errors="replace")
     if proc.returncode != 0:
         detail = redact_secret(proc.stderr or proc.stdout, base_token)
-        raise SkillError(f"lark-cli field-list 失败：{detail}")
+        raise UpstreamServiceError(f"lark-cli field-list 失败：{detail}")
     try:
         payload = json.loads(proc.stdout)
     except json.JSONDecodeError as error:
-        raise SkillError("lark-cli field-list 返回了无法解析的 JSON") from error
+        raise UpstreamServiceError("lark-cli field-list 返回了无法解析的 JSON") from error
     if not isinstance(payload, dict):
-        raise SkillError("lark-cli field-list 返回的 JSON 顶层不是对象")
+        raise UpstreamServiceError("lark-cli field-list 返回的 JSON 顶层不是对象")
     if not payload.get("ok"):
         message = lark_error_message(payload, base_token)
-        raise SkillError(f"读取 Base 字段失败：{message}")
+        raise UpstreamServiceError(f"读取 Base 字段失败：{message}")
     return payload
 
 
@@ -911,16 +935,16 @@ def get_view_name(lark_cli: str, as_identity: str, base_token: str, table_id: st
     proc = subprocess.run(cmd, capture_output=True, text=True, encoding="utf-8", errors="replace")
     if proc.returncode != 0:
         detail = redact_secret(proc.stderr or proc.stdout, base_token)
-        raise SkillError(f"lark-cli view-get 失败：{detail}")
+        raise UpstreamServiceError(f"lark-cli view-get 失败：{detail}")
     try:
         payload = json.loads(proc.stdout)
     except json.JSONDecodeError as error:
-        raise SkillError("lark-cli view-get 返回了无法解析的 JSON") from error
+        raise UpstreamServiceError("lark-cli view-get 返回了无法解析的 JSON") from error
     if not isinstance(payload, dict):
-        raise SkillError("lark-cli view-get 返回的 JSON 顶层不是对象")
+        raise UpstreamServiceError("lark-cli view-get 返回的 JSON 顶层不是对象")
     if not payload.get("ok"):
         message = lark_error_message(payload, base_token)
-        raise SkillError(f"读取 Base 视图失败：{message}")
+        raise UpstreamServiceError(f"读取 Base 视图失败：{message}")
     return payload["data"]["view"]["name"]
 
 
@@ -952,7 +976,7 @@ def scan_records(
         if offset == 0 and scan_view_id is None:
             missing_fields = [name for name in REQUIRED_FIELDS if name not in resolved_fields]
             if missing_fields:
-                raise SkillError(
+                raise DataContractError(
                     "Base 表缺少必需字段（已忽略末尾中文/英文括号备注仍未匹配到）："
                     + "、".join(missing_fields)
                 )
@@ -998,7 +1022,7 @@ def match_scope_tasks(
             continue
         parent_by_key[key] = record
     if duplicate_parents:
-        raise SkillError("视图中存在重复父级TDT：" + "，".join(sorted(duplicate_parents)))
+        raise DataContractError("视图中存在重复父级TDT：" + "，".join(sorted(duplicate_parents)))
 
     matched: list[tuple[str, dict[str, str], dict[str, str]]] = []
     missing: list[str] = []
@@ -1010,7 +1034,7 @@ def match_scope_tasks(
             continue
         parent_id = parent.get("_record_id", "")
         if not parent_id:
-            raise SkillError(f"父级TDT'{tdt_name}'缺少 record_id，无法安全匹配子任务")
+            raise DataContractError(f"父级TDT'{tdt_name}'缺少 record_id，无法安全匹配子任务")
         for task_name in entry["tasks"]:
             task_key = normalize_match_key(task_name)
             hits = [
@@ -1023,11 +1047,11 @@ def match_scope_tasks(
                 missing.append(f"'{tdt_name}' 下未找到子任务'{task_name}'")
                 continue
             if len(hits) > 1:
-                raise SkillError(f"'{tdt_name}' 下子任务'{task_name}'存在 {len(hits)} 条重复精确匹配记录")
+                raise DataContractError(f"'{tdt_name}' 下子任务'{task_name}'存在 {len(hits)} 条重复精确匹配记录")
             matched.append((tdt_name, parent, hits[0]))
             log(logs, f"层级精确匹配成功：{tdt_name} / {hits[0].get('TDT/子任务名称', '')}（{hits[0].get('项目编码', '')}）")
     if missing:
-        raise SkillError("白名单匹配失败：" + "；".join(missing))
+        raise DataContractError("白名单匹配失败：" + "；".join(missing))
     return matched
 
 
@@ -1060,7 +1084,7 @@ def match_field_tasks(
 
     key = resolve_record_key(all_records, filter_field)
     if not key:
-        raise SkillError(f"Base 表中未找到筛选字段：{filter_field}")
+        raise DataContractError(f"Base 表中未找到筛选字段：{filter_field}")
 
     accepted = accepted_filter_values(filter_value)
     matched: list[tuple[str, dict[str, str], dict[str, str]]] = []
@@ -1086,12 +1110,12 @@ def match_field_tasks(
         matched.append((tdt_name, parent, child))
         log(logs, f"字段筛选命中：{tdt_name} / {child.get('TDT/子任务名称', '')}（{child.get('项目编码', '')}）")
     if orphaned:
-        raise SkillError(
+        raise DataContractError(
             "字段筛选命中的子任务未通过「父记录」关联到 TDT 记录："
             + "、".join(orphaned)
         )
     if not matched:
-        raise SkillError(f"没有子任务记录的「{filter_field}」为「{filter_value}」")
+        raise DataContractError(f"没有子任务记录的「{filter_field}」为「{filter_value}」")
     return matched
 
 
@@ -1167,6 +1191,8 @@ def first_record_value(record: dict[str, str], field_names: list[str]) -> str:
 
 
 def build_milestone(lab: str, planned_raw: str, actual_raw: str, run_date: dt.date) -> dict[str, str]:
+    if not (planned_raw or "").strip() and not (actual_raw or "").strip():
+        return {"lab": lab, "date": "", "st": "pend"}
     planned = parse_base_date(planned_raw)
     actual = parse_base_date(actual_raw)
     if actual is not None:
@@ -1176,7 +1202,14 @@ def build_milestone(lab: str, planned_raw: str, actual_raw: str, run_date: dt.da
     return {"lab": lab, "date": display_date(planned, run_date), "st": "pend"}
 
 
-def build_project(record: dict[str, str], parent: dict[str, str], tdt_name: str, run_date: dt.date, warnings: list[str]) -> dict[str, Any]:
+def build_project(
+    record: dict[str, str],
+    parent: dict[str, str],
+    tdt_name: str,
+    run_date: dt.date,
+    warnings: list[str],
+    field_titles: dict[str, str] | None = None,
+) -> dict[str, Any]:
     task_name = record.get("TDT/子任务名称", "")
     stage = mapped_base_value(record.get(STAGE_FIELD, ""))
     risk = mapped_base_value(record.get("风险状态", ""))
@@ -1210,6 +1243,12 @@ def build_project(record: dict[str, str], parent: dict[str, str], tdt_name: str,
         ["价值说明", "价值目标", "产品摘要", "最新进展描述（TDT PM）"],
     )
 
+    titles = field_titles or {
+        "startMilestone": "启动",
+        "tdr1Milestone": "TDR1",
+        "tdr2Milestone": "TDR2",
+        "tdr3Milestone": "TDR3",
+    }
     return {
         "pm": pm,
         "tdt": tdt_name,
@@ -1219,22 +1258,22 @@ def build_project(record: dict[str, str], parent: dict[str, str], tdt_name: str,
         "risk": risk,
         "upd": display_date(upd_day, run_date) if upd_day else "",
         "valueDecision": display_compact_date(
-            first_record_value(record, [VALUE_DECISION_FIELD, "启动时间（价值决策）", "启动时间"]),
+            record.get(VALUE_DECISION_FIELD, ""),
             warnings,
             f"子任务'{task_name}'的价值决策",
         ),
         "closeDate": display_compact_date(
-            first_record_value(record, ["TDR3预计", "结项时间"]),
+            record.get("TDR3预计", ""),
             warnings,
             f"子任务'{task_name}'的结项时间",
         ),
         "tdtSummary": tdt_summary,
         "cps": cps,
         "ms": [
-            build_milestone("启动", "", record.get(VALUE_DECISION_FIELD, ""), run_date),
-            build_milestone("TDR1", record.get("TDR1计划", ""), record.get("TDR1实际", ""), run_date),
-            build_milestone("TDR2", record.get(TDR2_PLAN_FIELD, ""), record.get("TDR2实际", ""), run_date),
-            build_milestone("TDR3", record.get("TDR3预计", ""), record.get("TDR3实际", ""), run_date),
+            build_milestone(titles.get("startMilestone", ""), "", record.get(VALUE_DECISION_FIELD, ""), run_date),
+            build_milestone(titles.get("tdr1Milestone", ""), record.get("TDR1计划", ""), record.get("TDR1实际", ""), run_date),
+            build_milestone(titles.get("tdr2Milestone", ""), record.get(TDR2_PLAN_FIELD, ""), record.get("TDR2实际", ""), run_date),
+            build_milestone(titles.get("tdr3Milestone", ""), record.get("TDR3预计", ""), record.get("TDR3实际", ""), run_date),
         ],
         "week": to_items(current),
         "next": to_items(next_plan),
@@ -1287,7 +1326,7 @@ def build_issue_data(
 
     base_token, table_id, view_id = parse_base_link(issue_base_url)
     if not table_id or not view_id:
-        raise SkillError("问题 Base URL 必须包含 table 与 view 查询参数")
+        raise UpstreamServiceError("问题 Base URL 必须包含 table 与 view 查询参数")
 
     view_name = get_view_name(lark_cli, as_identity, base_token, table_id, view_id)
     log(logs, f"问题视图校验通过：{view_name}")
@@ -1473,28 +1512,28 @@ def build_data(
     """从 Base 拉取并装配看板 DATA（静态生成与本地服务共用）。"""
     base_token, table_id, view_id = parse_base_link(base_url)
     if not table_id or not view_id:
-        raise SkillError("Base URL 必须包含 table 与 view 查询参数")
+        raise UpstreamServiceError("Base URL 必须包含 table 与 view 查询参数")
 
     view_name = get_view_name(lark_cli, as_identity, base_token, table_id, view_id)
-    if view_name != EXPECTED_VIEW_NAME:
-        raise SkillError(f"视图名不符：期望'{EXPECTED_VIEW_NAME}'，实际'{view_name}'，请检查 URL")
-    log(logs, f"视图校验通过：{view_name}")
+    log(logs, f"Base URL 定位通过：table_id={table_id}, view_id={view_id}（当前视图名：{view_name}）")
 
     field_payload = run_lark_field_list(lark_cli, as_identity, base_token, table_id)
+    field_names = [
+        str(field.get("name", ""))
+        for field in field_payload.get("data", {}).get("fields", [])
+        if isinstance(field, dict)
+    ]
+    resolved_fields = resolve_field_names(field_names)
+    field_titles = build_field_titles(field_names)
     field_option_orders = extract_field_option_orders(
         field_payload,
         ("赛道", PRODUCT_GENERATION_FIELD),
     )
     all_records = scan_records(None, "全表记录", base_token, table_id, lark_cli, as_identity, page_delay, logs)
     if all_records:
-        field_names = [
-            str(field.get("name", ""))
-            for field in field_payload.get("data", {}).get("fields", [])
-            if isinstance(field, dict)
-        ]
-        primary_field_name = resolve_field_names(field_names).get("TDT/子任务名称")
+        primary_field_name = resolved_fields.get("TDT/子任务名称")
         if not primary_field_name:
-            raise SkillError("Base 表缺少必需字段：TDT/子任务名称")
+            raise DataContractError("Base 表缺少必需字段：TDT/子任务名称")
         created_times = scan_record_created_times(
             base_token=base_token,
             table_id=table_id,
@@ -1514,7 +1553,10 @@ def build_data(
         view_records = scan_records(view_id, "目标视图", base_token, table_id, lark_cli, as_identity, page_delay, logs)
         matched = match_scope_tasks(scope, view_records, all_records, logs)
 
-    projects = [build_project(child, parent, tdt, run_date, warnings) for tdt, parent, child in matched]
+    projects = [
+        build_project(child, parent, tdt, run_date, warnings, field_titles)
+        for tdt, parent, child in matched
+    ]
     groups = group_projects(projects)
     project_overview = build_project_overview(
         records=all_records,
@@ -1560,6 +1602,7 @@ def build_data(
         "week": f"{iso_year} · W{iso_week:02d}",
         "generatedAt": dt.datetime.now().strftime("%m-%d %H:%M"),
         "viewName": view_name,
+        "fieldTitles": field_titles,
         "allPms": all_pms,
         "pmRoster": pm_roster,
         "groups": groups,
@@ -1599,7 +1642,7 @@ def build_innovation_competition(
 
     base_token, table_id, view_id = parse_base_link(innovation_base_url)
     if not table_id or not view_id:
-        raise SkillError("创新大赛 Base URL 必须包含 table 与 view 查询参数")
+        raise UpstreamServiceError("创新大赛 Base URL 必须包含 table 与 view 查询参数")
     view_name = get_view_name(lark_cli, as_identity, base_token, table_id, view_id)
 
     field_payload = run_lark_field_list(lark_cli, as_identity, base_token, table_id)
@@ -1611,7 +1654,7 @@ def build_innovation_competition(
     }
     missing_fields = [name for name in INNOVATION_FIELDS if name not in fields_by_name]
     if missing_fields:
-        raise SkillError("创新大赛 Base 表缺少必需字段：" + "、".join(missing_fields))
+        raise DataContractError("创新大赛 Base 表缺少必需字段：" + "、".join(missing_fields))
     selected_field_names = list(INNOVATION_FIELDS)
     if INNOVATION_ORDER_FIELD in fields_by_name:
         selected_field_names.append(INNOVATION_ORDER_FIELD)

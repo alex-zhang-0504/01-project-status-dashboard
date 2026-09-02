@@ -967,8 +967,9 @@ function groupByTdt(projects) {
 }
 
 function headerRow() {
+  const fieldTitles = DATA.fieldTitles || {};
   return `<div class="task-grid" role="row">
-    ${["子任务名称", "价值决策", "结项时间", "风险状态", "项目阶段", "控制点", "本周进展", "下周计划", "风险"]
+    ${["子任务名称", fieldTitles.valueDecision ?? "价值决策", fieldTitles.closeDate ?? "结项时间", "风险状态", "项目阶段", "控制点", "本周进展", "下周计划", "风险"]
       .map(label => `<div class="head-cell" role="columnheader">${label}</div>`).join("")}
   </div>`;
 }
@@ -1282,7 +1283,10 @@ async function fetchDashboardData(fetchImpl = fetch, waitImpl = delay => new Pro
       const response = await fetchImpl("/api/data", { cache: "no-store" });
       if (!response.ok) {
         let message = "HTTP " + response.status;
-        try { message = (await response.json()).error || message; } catch (error) {}
+        try {
+          const apiError = (await response.json()).error;
+          message = typeof apiError === "string" ? apiError : apiError?.message || message;
+        } catch (error) {}
         throw new Error(message);
       }
       return await response.json();

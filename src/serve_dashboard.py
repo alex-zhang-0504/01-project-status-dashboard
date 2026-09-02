@@ -103,6 +103,15 @@ class DashboardHTTPServer(ThreadingHTTPServer):
     daemon_threads = True
 
 
+def api_error_response(error: Exception) -> tuple[int, str, str]:
+    """把已识别故障与未知代码异常映射到稳定的 API 错误契约。"""
+    if isinstance(error, gd.DataContractError):
+        return 422, "VALIDATION_ERROR", str(error)
+    if isinstance(error, gd.UpstreamServiceError):
+        return 503, "SERVICE_UNAVAILABLE", str(error)
+    return 500, "INTERNAL_ERROR", "服务器内部错误"
+
+
 def generator_source_signature() -> tuple[int, int]:
     """用高精度修改时间和文件大小识别生成模块是否变化。"""
     stat = GENERATOR_PATH.stat()
@@ -299,10 +308,14 @@ class Handler(BaseHTTPRequestHandler):
                 data = fetch_data()
                 STATE["data"] = data
                 self._send(200, "application/json; charset=utf-8", json.dumps(data, ensure_ascii=False).encode("utf-8"))
-            except Exception as error:  # 刷新失败返回 500，前端提示并回退旧数据
+            except Exception as error:  # 刷新失败按契约分类，前端提示并回退旧数据
                 print(f"刷新失败：{type(error).__name__}: {error}", file=sys.stderr)
-                body = json.dumps({"error": str(error)}, ensure_ascii=False).encode("utf-8")
-                self._send(500, "application/json; charset=utf-8", body)
+                status, code, message = api_error_response(error)
+                body = json.dumps(
+                    {"error": {"code": code, "message": message}},
+                    ensure_ascii=False,
+                ).encode("utf-8")
+                self._send(status, "application/json; charset=utf-8", body)
         elif path == "/api/health":
             body = json.dumps(
                 {"status": "ok", "project_id": PROJECT_ID, "build_id": BUILD_ID}

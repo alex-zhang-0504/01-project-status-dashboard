@@ -31,11 +31,15 @@ assert.deepEqual(NETWORK_RETRY_DELAYS_MS, [800, 1600]);
     fetchDashboardData(
       async () => {
         calls += 1;
-        return { ok: false, status: 500, json: async () => ({ error: "Base 权限错误" }) };
+        return {
+          ok: false,
+          status: 422,
+          json: async () => ({ error: { code: "VALIDATION_ERROR", message: "Base 必需字段错误" } }),
+        };
       },
       async () => {},
     ),
-    /Base 权限错误/,
+    /Base 必需字段错误/,
   );
   assert.equal(calls, 1, "HTTP／Base 错误不应按网络断连重试");
 }
