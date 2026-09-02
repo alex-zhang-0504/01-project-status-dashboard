@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import fs from "node:fs";
 
-const template = fs.readFileSync(new URL("../src/template-dashboard-v1.3.0.html", import.meta.url), "utf8");
+const template = fs.readFileSync(new URL("../src/template-dashboard-v1.3.1.html", import.meta.url), "utf8");
 const scriptBlocks = [...template.matchAll(/<script>([\s\S]*?)<\/script>/g)].map(match => match[1]);
 assert.equal(scriptBlocks.length, 2, "正式模板应包含两个内嵌脚本");
 scriptBlocks.forEach(source => new Function(source));

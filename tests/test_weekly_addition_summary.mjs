@@ -3,7 +3,7 @@ import fs from "node:fs";
 import vm from "node:vm";
 
 const template = fs.readFileSync(
-  new URL("../src/template-dashboard-v1.3.0.html", import.meta.url),
+  new URL("../src/template-dashboard-v1.3.1.html", import.meta.url),
   "utf8",
 );
 const helperBlock = template.match(

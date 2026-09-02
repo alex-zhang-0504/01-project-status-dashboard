@@ -5,13 +5,13 @@ import { fileURLToPath } from "node:url";
 
 const projectRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const read = relativePath => fs.readFileSync(path.join(projectRoot, relativePath), "utf8");
-const template = read("src/template-dashboard-v1.3.0.html");
+const template = read("src/template-dashboard-v1.3.1.html");
 const meetingContent = JSON.parse(read("src/meeting_content.json"));
 const pieSample = read("docs/samples/pie-chart.html");
 const readme = read("README.md");
 
-assert.match(template, /<title>TDT 技术项目状态看板 · V1\.3\.0<\/title>/);
-assert.match(template, /<h1>TDT 技术项目状态看板 V1\.3\.0<\/h1>/);
+assert.match(template, /<title>TDT 技术项目状态看板 · V1\.3\.1<\/title>/);
+assert.match(template, /<h1>TDT 技术项目状态看板 V1\.3\.1<\/h1>/);
 assert.doesNotMatch(template, /V1\.[01]\.0/);
 
 assert.match(template, /--accent:\s*#0a9bf5;/i);

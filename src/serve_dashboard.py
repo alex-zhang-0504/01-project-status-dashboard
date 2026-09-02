@@ -41,7 +41,7 @@ def calculate_build_id(project_dir: Path = PROJECT_DIR) -> str:
     runtime_files = (
         project_dir / "src" / "serve_dashboard.py",
         project_dir / "src" / "generate_dashboard.py",
-        project_dir / "src" / "template-dashboard-v1.3.0.html",
+        project_dir / "src" / "template-dashboard-v1.3.1.html",
         project_dir / "src" / "meeting_content.json",
     )
     digest = hashlib.sha256()
@@ -336,9 +336,9 @@ def main() -> int:
     )
     parser.add_argument("--filter-field", default=None, help="按字段筛选收录子任务（替代白名单），如：是否上周三例会")
     parser.add_argument("--filter-value", default="是", help="筛选字段的命中值，默认「是」")
-    parser.add_argument("--template", default=str(src_dir / "template-dashboard-v1.3.0.html"), help="Template HTML path")
+    parser.add_argument("--template", default=str(src_dir / "template-dashboard-v1.3.1.html"), help="Template HTML path")
     parser.add_argument("--output-dir", default=str(project_dir / "output"), help="Offline HTML output directory")
-    parser.add_argument("--variant", default="v1.3.0", help="Legacy compatibility option; formal offline filename is fixed")
+    parser.add_argument("--variant", default="v1.3.1", help="Legacy compatibility option; formal offline filename is fixed")
     parser.add_argument("--port", type=int, default=8710, help="Local port, default 8710")
     parser.add_argument("--auto-port", action="store_true", help="Reuse this build or select a free project-01 port")
     parser.add_argument("--replace-existing", action="store_true", help="Replace an existing dashboard process from this project on the selected port")

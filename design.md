@@ -1,7 +1,7 @@
 # design.md — TDT 看板样式设计规范
 
 > **改动前先读本文件。** 任何视觉改动都应落在本文件已定的框架内;框架内的调整直接做,框架外的先改本文件再改代码。
-> 唯一正式视觉实现是 `src/template-dashboard-v1.3.0.html`（单文件、无第三方依赖、无前端构建链）。参照系是 macOS Numbers 的表格与图表样式；正式数据抓取、热更新和离线导出仍由既有 Python／lark-cli 链路负责。
+> 唯一正式视觉实现是 `src/template-dashboard-v1.3.1.html`（单文件、无第三方依赖、无前端构建链）。参照系是 macOS Numbers 的表格与图表样式；正式数据抓取、热更新和离线导出仍由既有 Python／lark-cli 链路负责。
 
 ## 0. 使用与维护约定
 

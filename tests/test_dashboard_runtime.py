@@ -79,7 +79,7 @@ class LocalServiceIdentityTests(unittest.TestCase):
         ):
             content = (PROJECT_DIR / name).read_text(encoding="utf-8")
             self.assertIn("--auto-port", content, name)
-            self.assertIn("template-dashboard-v1.3.0.html", content, name)
+            self.assertIn("template-dashboard-v1.3.1.html", content, name)
 
     def test_launcher_line_endings_match_each_platform(self) -> None:
         for name in ("start-dashboard.cmd", "start-dashboard.example.cmd"):
@@ -93,6 +93,17 @@ class LocalServiceIdentityTests(unittest.TestCase):
 
 
 class MappedBaseValueTests(unittest.TestCase):
+    def test_tdr2_plan_field_prefers_current_name_and_accepts_legacy_alias(self) -> None:
+        current = gd.resolve_field_names(list(gd.REQUIRED_FIELDS) + ["TDR2(KO)"])
+        self.assertEqual(current[gd.TDR2_PLAN_FIELD], gd.TDR2_PLAN_FIELD)
+
+        legacy_fields = [
+            "TDR2(KO)" if field == gd.TDR2_PLAN_FIELD else field
+            for field in gd.REQUIRED_FIELDS
+        ]
+        legacy = gd.resolve_field_names(legacy_fields)
+        self.assertEqual(legacy[gd.TDR2_PLAN_FIELD], "TDR2(KO)")
+
     def test_mapped_base_value_preserves_every_nonempty_base_value(self) -> None:
         for value in (None, "", "   "):
             self.assertEqual(gd.mapped_base_value(value), "")
@@ -712,7 +723,7 @@ class StartupOrderTests(unittest.TestCase):
                 "--config",
                 str(config_path),
                 "--template",
-                str(SRC_DIR / "template-dashboard-v1.3.0.html"),
+                str(SRC_DIR / "template-dashboard-v1.3.1.html"),
                 "--replace-existing",
                 "--no-open",
             ]

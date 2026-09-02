@@ -39,6 +39,7 @@ TDT_RECORD_TYPE = "TDT"
 CHILD_RECORD_TYPE = "子任务"
 PRODUCT_GENERATION_FIELD = "4+4+1 @26"
 VALUE_DECISION_FIELD = "价值决策"
+TDR2_PLAN_FIELD = "TDR2计划"
 STAGE_FIELD = "阶段查找"
 CONTROL_POINT_FIELD = "阶段控制点"
 PROJECT_STATUS_FIELD = "状态查找"
@@ -70,7 +71,7 @@ REQUIRED_FIELDS = [
     VALUE_DECISION_FIELD,
     "TDR1计划",
     "TDR1实际",
-    "TDR2(KO)",
+    TDR2_PLAN_FIELD,
     "TDR2实际",
     "TDR3预计",
     "TDR3实际",
@@ -85,6 +86,10 @@ REQUIRED_FIELDS = [
     "子任务 PM",
     "最近更新时间",
 ]
+
+FIELD_ALIASES = {
+    TDR2_PLAN_FIELD: ("TDR2(KO)",),
+}
 
 OVERVIEW_TRACK_TEXT_COUNT = 13
 TIME_ZONE = dt.timezone(dt.timedelta(hours=8), name="Asia/Shanghai")
@@ -316,10 +321,19 @@ def resolve_field_names(actual_fields: list[str]) -> dict[str, str]:
         tolerant_index.setdefault(normalize_match_key(strip_field_suffix(actual)), actual)
     resolved: dict[str, str] = {}
     for canonical in REQUIRED_FIELDS:
-        if canonical in actual_set:
-            resolved[canonical] = canonical
+        candidates = (canonical, *FIELD_ALIASES.get(canonical, ()))
+        exact = next((candidate for candidate in candidates if candidate in actual_set), None)
+        if exact:
+            resolved[canonical] = exact
             continue
-        actual = tolerant_index.get(normalize_match_key(canonical))
+        actual = next(
+            (
+                tolerant_index[normalize_match_key(strip_field_suffix(candidate))]
+                for candidate in candidates
+                if normalize_match_key(strip_field_suffix(candidate)) in tolerant_index
+            ),
+            None,
+        )
         if actual:
             resolved[canonical] = actual
     return resolved
@@ -1219,7 +1233,7 @@ def build_project(record: dict[str, str], parent: dict[str, str], tdt_name: str,
         "ms": [
             build_milestone("启动", "", record.get(VALUE_DECISION_FIELD, ""), run_date),
             build_milestone("TDR1", record.get("TDR1计划", ""), record.get("TDR1实际", ""), run_date),
-            build_milestone("TDR2", record.get("TDR2(KO)", ""), record.get("TDR2实际", ""), run_date),
+            build_milestone("TDR2", record.get(TDR2_PLAN_FIELD, ""), record.get("TDR2实际", ""), run_date),
             build_milestone("TDR3", record.get("TDR3预计", ""), record.get("TDR3实际", ""), run_date),
         ],
         "week": to_items(current),
@@ -1816,8 +1830,8 @@ def main() -> int:
     )
     parser.add_argument("--filter-field", default=None, help="按字段筛选收录子任务（替代白名单），如：是否上周三例会")
     parser.add_argument("--filter-value", default="是", help="筛选字段的命中值，默认「是」（勾选框 True 亦命中）")
-    parser.add_argument("--template", default=str(src_dir / "template-dashboard-v1.3.0.html"), help="Template HTML path")
-    parser.add_argument("--variant", default="v1.3.0", help="Legacy compatibility option; formal offline filename is fixed")
+    parser.add_argument("--template", default=str(src_dir / "template-dashboard-v1.3.1.html"), help="Template HTML path")
+    parser.add_argument("--variant", default="v1.3.1", help="Legacy compatibility option; formal offline filename is fixed")
     args = parser.parse_args()
 
     logs: list[str] = []
