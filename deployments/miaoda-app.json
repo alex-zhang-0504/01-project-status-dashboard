@@ -5,11 +5,22 @@
   "local_path": "deployments/miaoda-app",
   "development_branch": "sprint/default",
   "last_verified_commit": "bacd0c2",
-  "last_release_id": "7673379105845677006",
-  "status": "v1.3.1_local_release_gate_verified_pending_push_and_release",
-  "pending_release_commit": "bacd0c2",
-  "development_preview_source_commit": "ff1def1",
-  "cloud_workspace_head": "b27e66c",
-  "cloud_workspace_checkpoint_commits": ["a01574e", "b27e66c"],
-  "cloud_workspace_checkpoint_status": "local_only_not_pushed_or_released"
+  "last_release_id": "7680945862449253306",
+  "status": "v1.3.1_release_finished_online_and_preview_verified",
+  "pending_release_commit": null,
+  "development_preview_source_commit": "b7d5cd2",
+  "cloud_workspace_head": "b7d5cd2",
+  "cloud_workspace_checkpoint_commits": [
+    "a01574e",
+    "b27e66c",
+    "5ef6dfb",
+    "4e645fe",
+    "cb4eb48",
+    "d098b27",
+    "63fabab",
+    "5c695c9",
+    "971875b",
+    "b7d5cd2"
+  ],
+  "cloud_workspace_checkpoint_status": "pushed_to_sprint_default_after_preview_pull_not_in_release_requires_cleanup"
 }
