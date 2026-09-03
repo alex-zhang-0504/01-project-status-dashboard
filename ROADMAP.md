@@ -6,6 +6,7 @@
 
 ## 已完成
 
+- 2026-09-03：将妙搭 App 独立仓库同步到 GitHub 二次远端 `alex-zhang-0504/01-project-status-dashboard-miaoda-app`。实时抓取确认远端 `github/sprint/default` 为 `ff1def1`，是本地清理提交 `721cb36` 的祖先且无分叉；通过当前进程临时代理将 15 个提交快进推送，推送后重新抓取并确认远端完整 SHA 为 `721cb3685e83497c93da948f5ba74c292652b60e`，文件树与本地一致。本次仅同步 GitHub 镜像，未修改妙搭 `main`、未创建 release、未重复线上验收。
 - 2026-09-03：第二次清理妙搭同步自动生成的 checkpoint。用户在开发页拉取 `7fa0fcb` 后，平台自动创建 `f53c5de`，重新修改 3 个 `business-ui` 文件和 `server/database/schema.ts`；确认其父提交为 `7fa0fcb` 且无其他远端变化后，快进保留该历史，并以 `721cb36` 清除 4 个文件的净变更。原 pre-commit 在 Git Bash 环境中正常执行；清理提交 tree 为 `403ad0c4b5630e63cd79e885e33b9f2c779e5eef`，与已通过完整发布门禁的 `7fa0fcb` 及发布提交 `bacd0c2` 完全一致。远端 `sprint/default` 已回读为 `721cb36`；未 force-push、未改发布态 `main`、未创建新 release。
 - 2026-09-02：清理妙搭开发页拉取附带的 10 个平台 checkpoint。先确认 `bacd0c2` 是远端 `b7d5cd2` 的共同基线且净影响严格限定为 12 个文件，再将 `sprint/default` 快进到远端并以新提交 `7fa0fcb` 恢复到已发布文件树；清理前后 tree 均为 `403ad0c4b5630e63cd79e885e33b9f2c779e5eef`。全程保留 checkpoint 历史，未 force-push、未改 `main`、未创建新 release；远端 `sprint/default` 已核对为 `7fa0fcb`，发布态 `main` 仍为 `f4f1f91`。完整 `npm run verify:release` 通过 lint、双端类型检查、生产构建、5 个 Jest 套件／31 项测试、412 个生产依赖裁剪和五类部署产物门禁，失败依赖 0。
 - 2026-09-02：发布妙搭 `V1.3.1`。将 App 提交 `bacd0c2` 快进推送到 `sprint/default`，release `7680945862449253306` 返回 `finished` 并明确绑定完整 SHA `bacd0c22445cedac126c02aec5d748b2a0830530`；发布态 `main` 推进为 `f4f1f91`。创建者线上页面完成首次生成、再次「重新生成」和离线下载，刷新时间由 22:36 更新至 22:37，得到 15 个 PM 分组、90 个详细进展子任务、693 个概况子任务、1 条遗留问题和 9 个创新项目；离线 HTML 为 138069 字节，版本 `V1.3.1`，无外链脚本或样式。开发页拉取后预览同步为 `V1.3.1`，真实生成及再次刷新成功；发布后 30 分钟线上 ERROR／WARN 日志为 0。开发页拉取同时将既有 schema／Hook checkpoint、六个脚手架自动升级提交、合并提交及新的三个 business-ui 自动修复提交推送到远端，形成 `b7d5cd2`，相对已发布 `bacd0c2` 共修改 12 个文件；这些附带改动未进入本次 release，后续已由 `7fa0fcb` 保留历史并清除净变更。
@@ -140,6 +141,7 @@
 
 ## 最近验证
 
+- 2026-09-03：GitHub 二次远端同步验证通过。`github/sprint/default` 已由 `ff1def1` 快进到 `721cb3685e83497c93da948f5ba74c292652b60e`；推送后重新抓取确认本地／GitHub SHA 和 tree 均一致，App 工作区干净。此次 GitHub 镜像不等于妙搭发布，未触碰线上状态。
 - 2026-09-03：第二次妙搭 checkpoint 清理验证通过。远端 `sprint/default` 从平台自动提交 `f53c5de` 快进到 `721cb3685e83497c93da948f5ba74c292652b60e`，本地与远端 SHA 一致且工作区干净；其 tree `403ad0c4b5630e63cd79e885e33b9f2c779e5eef` 与已完成完整发布门禁的 `7fa0fcb` 完全一致。此次仅清理开发分支，未创建 release，线上发布态未变。
 - 2026-09-02：妙搭 checkpoint 清理验证通过。远端 `sprint/default` 从 `b7d5cd2` 快进到清理提交 `7fa0fcb445c16c92b72319de4e600fd15485527b`，其 tree `403ad0c4b5630e63cd79e885e33b9f2c779e5eef` 与发布提交 `bacd0c2` 完全一致；远端发布态 `main` 在推送前后均为 `f4f1f913a9bde60357a4fa799c04abd809c52d6f`。五项部署产物存在，完整发布门禁退出码为 0，5 个测试套件／31 项测试通过，412 个生产依赖复制成功且失败 0。未新建 release，开发预览未再次执行可能重复生成 checkpoint 的“拉取”。
 - 2026-09-02：妙搭 `V1.3.1` 发布及双状态验收通过。`release-get` 对 release `7680945862449253306` 返回 `finished`，绑定 App 完整提交 `bacd0c22445cedac126c02aec5d748b2a0830530`；远端 `main` 为 `f4f1f913a9bde60357a4fa799c04abd809c52d6f` 且包含该提交。线上发布态首次生成与再次刷新成功，时间由 22:36 更新至 22:37；开发预览态同步为 `V1.3.1`，真实生成 90 个子任务并再次刷新无错误。下载文件 `2026-09-02(W36)-TDT技术项目状态看板.html` 为 138069 字节，内含 15 个 PM、90 个详细项目、693 个概况项目、1 条遗留问题和 9 个创新项目，外链脚本／样式均为 0。浏览器两端控制台 ERROR／WARN 均为 0，妙搭近 30 分钟线上 ERROR／WARN 日志为 0。开发页自动 checkpoint `b7d5cd2` 已只读审计并记录，未进入该 release。
