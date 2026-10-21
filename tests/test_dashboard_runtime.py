@@ -80,7 +80,7 @@ class LocalServiceIdentityTests(unittest.TestCase):
         ):
             content = (PROJECT_DIR / name).read_text(encoding="utf-8")
             self.assertIn("--auto-port", content, name)
-            self.assertIn("template-dashboard-v1.3.1.html", content, name)
+            self.assertIn("template-dashboard-v1.4.0.html", content, name)
 
     def test_launcher_line_endings_match_each_platform(self) -> None:
         for name in ("start-dashboard.cmd", "start-dashboard.example.cmd"):
@@ -521,7 +521,7 @@ class MappedBaseValueTests(unittest.TestCase):
             },
         )
 
-    def test_issue_weeks_use_runtime_iso_anchor_and_ignore_older_content(self) -> None:
+    def test_issue_weeks_preserve_empty_previous_week_and_ignore_older_content(self) -> None:
         def row(**values: object) -> list[object]:
             return [values.get(field, "") for field in gd.ISSUE_FIELDS]
 
@@ -529,9 +529,9 @@ class MappedBaseValueTests(unittest.TestCase):
             "data": {
                 "fields": gd.ISSUE_FIELDS,
                 "data": [
-                    row(Week=31),
-                    row(Week=30),
-                    row(Week=29, Item="I-29", 任务="不应进入当前看板"),
+                    row(Week=43),
+                    row(Week=42),
+                    row(Week=41, Item="I-41", 任务="更早周有内容也不能代替空白上周"),
                 ],
                 "has_more": False,
             }
@@ -539,23 +539,29 @@ class MappedBaseValueTests(unittest.TestCase):
         with (
             mock.patch.object(gd, "parse_base_link", return_value=("token", "table", "view")),
             mock.patch.object(gd, "get_view_name", return_value="问题视图"),
-            mock.patch.object(gd, "run_lark_record_list", return_value=payload),
+            mock.patch.object(gd, "run_lark_record_list", return_value=payload) as query,
         ):
             result = gd.build_issue_data(
                 issue_base_url="https://example.invalid/base/token?table=table&view=view",
                 lark_cli="lark-cli",
                 as_identity="user",
                 page_delay=0,
-                run_date=dt.date(2026, 8, 1),
+                run_date=dt.date(2026, 10, 21),
                 logs=[],
                 warnings=[],
             )
 
-        self.assertEqual(result["week"], 31)
-        self.assertEqual(result["previousWeek"], 30)
-        self.assertEqual(result["weekLabel"], "第30周—第31周")
-        self.assertEqual([group["week"] for group in result["groups"]], [30, 31])
-        self.assertEqual(result["total"], 0)
+        self.assertEqual(result["week"], 43)
+        self.assertEqual(result["previousWeek"], 42)
+        self.assertEqual(result["weekLabel"], "第42周—第43周")
+        self.assertEqual([group["week"] for group in result["groups"]], [42, 43])
+        self.assertEqual(query.call_args.kwargs["field_ids"], gd.ISSUE_FIELDS)
+        self.assertEqual(
+            [field for field in gd.ISSUE_FIELDS if "日期" in field],
+            ["计划完成日期", "调整日期", "实际完成日期"],
+        )
+        self.assertEqual(result["previousTotal"], 0)
+        self.assertEqual(result["currentTotal"], 0)
 
     def test_issue_week_anchor_uses_date_subtraction_across_iso_year(self) -> None:
         def row(**values: object) -> list[object]:
@@ -589,8 +595,68 @@ class MappedBaseValueTests(unittest.TestCase):
         self.assertEqual(result["previousWeek"], 53)
         self.assertEqual(result["week"], 1)
         self.assertEqual(result["weekLabel"], "2026年第53周—2027年第1周")
+        self.assertEqual(result["groups"][0]["title"], "2026年第53周遗留问题")
         self.assertEqual(result["previousTotal"], 1)
         self.assertEqual(result["currentTotal"], 1)
+
+    def test_issue_standard_weeks_across_pages_preserve_status_and_values(self) -> None:
+        def row(**values: object) -> list[object]:
+            return [values.get(field, "") for field in gd.ISSUE_FIELDS]
+
+        pages = [
+            {"data": {"fields": gd.ISSUE_FIELDS, "data": [
+                row(Week=44, 任务="未来周"),
+                row(Week=43, 任务="本周"),
+                row(Week=42, 任务="  "),
+                row(Week=40, 任务="旧周"),
+                row(Week="bad", 任务="无效周"),
+                row(Week="", 任务="缺失周"),
+                row(Week=41.5, 任务="小数周"),
+                row(Week=54, 任务="超范围周"),
+            ], "has_more": True}},
+            {"data": {"fields": gd.ISSUE_FIELDS, "data": [
+                row(Week=42, Item="1", 任务="/", 任务状态="OPEN"),
+                row(Week=42, Item="2", 当前进展="已完成", 任务状态="CLOSED"),
+                row(Week=39, 任务="更早问题"),
+            ], "has_more": False}},
+        ]
+        warnings: list[str] = []
+        with (
+            mock.patch.object(gd, "parse_base_link", return_value=("token", "table", "view")),
+            mock.patch.object(gd, "get_view_name", return_value="问题视图"),
+            mock.patch.object(gd, "run_lark_record_list", side_effect=pages) as query,
+        ):
+            result = gd.build_issue_data(
+                issue_base_url="https://example.invalid/base/token?table=table&view=view",
+                lark_cli="lark-cli", as_identity="user", page_delay=0,
+                run_date=dt.date(2026, 10, 20), logs=[], warnings=warnings,
+            )
+        self.assertEqual(query.call_count, 2)
+        self.assertEqual(query.call_args_list[1].args[4], 8)
+        self.assertEqual(result["week"], 43)
+        self.assertEqual(result["previousWeek"], 42)
+        self.assertEqual(result["previousTotal"], 2)
+        self.assertEqual(result["currentTotal"], 1)
+        self.assertEqual(result["open"], 1)
+        self.assertEqual(result["closed"], 1)
+        self.assertEqual(result["groups"][0]["items"][0]["task"], "/")
+        self.assertEqual(len(warnings), 4)
+
+    def test_issue_no_content_keeps_both_standard_week_groups(self) -> None:
+        payload = {"data": {"fields": gd.ISSUE_FIELDS, "data": [], "has_more": False}}
+        with (
+            mock.patch.object(gd, "parse_base_link", return_value=("token", "table", "view")),
+            mock.patch.object(gd, "get_view_name", return_value="问题视图"),
+            mock.patch.object(gd, "run_lark_record_list", return_value=payload),
+        ):
+            result = gd.build_issue_data(
+                issue_base_url="https://example.invalid/base/token?table=table&view=view",
+                lark_cli="lark-cli", as_identity="user", page_delay=0,
+                run_date=dt.date(2026, 10, 20), logs=[], warnings=[],
+            )
+        self.assertEqual([group["week"] for group in result["groups"]], [42, 43])
+        self.assertEqual(result["groups"][0]["title"], "第42周遗留问题")
+        self.assertEqual(result["total"], 0)
 
     def test_innovation_table_preserves_nonempty_base_values(self) -> None:
         field_payload = {
@@ -827,7 +893,7 @@ class StartupOrderTests(unittest.TestCase):
                 "--config",
                 str(config_path),
                 "--template",
-                str(SRC_DIR / "template-dashboard-v1.3.1.html"),
+                str(SRC_DIR / "template-dashboard-v1.4.0.html"),
                 "--replace-existing",
                 "--no-open",
             ]

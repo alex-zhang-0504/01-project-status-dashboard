@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import fs from "node:fs";
 
-const template = fs.readFileSync(new URL("../src/template-dashboard-v1.3.1.html", import.meta.url), "utf8");
+const template = fs.readFileSync(new URL("../src/template-dashboard-v1.4.0.html", import.meta.url), "utf8");
 const match = template.match(/const NETWORK_RETRY_DELAYS_MS = \[800, 1600\];[\s\S]*?(?=\naiBtn\.addEventListener)/);
 assert.ok(match, "未找到刷新重试函数");
 const loadRefreshHelper = new Function(`${match[0]}; return { NETWORK_RETRY_DELAYS_MS, fetchDashboardData };`);

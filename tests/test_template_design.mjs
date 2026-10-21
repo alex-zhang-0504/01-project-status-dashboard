@@ -5,13 +5,13 @@ import { fileURLToPath } from "node:url";
 
 const projectRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const read = relativePath => fs.readFileSync(path.join(projectRoot, relativePath), "utf8");
-const template = read("src/template-dashboard-v1.3.1.html");
+const template = read("src/template-dashboard-v1.4.0.html");
 const meetingContent = JSON.parse(read("src/meeting_content.json"));
 const pieSample = read("docs/samples/pie-chart.html");
 const readme = read("README.md");
 
-assert.match(template, /<title>TDT 技术项目状态看板 · V1\.3\.1<\/title>/);
-assert.match(template, /<h1>TDT 技术项目状态看板 V1\.3\.1<\/h1>/);
+assert.match(template, /<title>TDT 技术项目状态看板 · V1\.4\.0<\/title>/);
+assert.match(template, /<h1>TDT 技术项目状态看板 V1\.4\.0<\/h1>/);
 assert.doesNotMatch(template, /V1\.[01]\.0/);
 
 assert.match(template, /--accent:\s*#0a9bf5;/i);
@@ -90,6 +90,12 @@ assert.equal(meetingContent.sections[0].items.length, 2);
 assert.equal(meetingContent.sections[1].items.length, 7);
 assert.match(JSON.stringify(meetingContent), /孟跃龙/);
 assert.match(JSON.stringify(meetingContent), /朱荣昌/);
+assert.doesNotMatch(JSON.stringify(meetingContent), /史团委|谢毅力/);
+assert.match(template, /#board \.issue-table td\.issue-progress-cell \{ text-align: left; \}/);
+assert.match(template, /<td class="issue-progress-cell">\$\{textHtml\(issue\.progress\)\}<\/td>/);
+assert.match(template, /<td class="issue-left">\$\{textHtml\(issue\.taskName\)\}<\/td>/);
+assert.match(template, /最近两周：/);
+assert.match(template, /上周遗留/);
 assert.doesNotMatch(template, /示例审批人|示例收款人/);
 
 const meetingTitleStyles = template.match(/#board \.meeting-title\s*\{([\s\S]*?)\n\}/)?.[1];

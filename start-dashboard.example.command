@@ -9,9 +9,9 @@ ISSUE_BASE_URL='<Issue Base URL with table and view params>'
 INNOVATION_BASE_URL='<Innovation Base URL with table and view params>'
 LARK_CLI='lark-cli'
 CONFIG='src/dashboard_config.json'
-TEMPLATE='src/template-dashboard-v1.3.1.html'
+TEMPLATE='src/template-dashboard-v1.4.0.html'
 OUTPUT_DIR='output'
-VARIANT='v1.3.1'
+VARIANT='v1.4.0'
 
 if [[ "$BASE_URL" == '<'* ]]; then
   echo "[提示] 这是占位模板，不能直接运行。"

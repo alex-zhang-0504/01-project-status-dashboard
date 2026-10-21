@@ -11,9 +11,9 @@ set "ISSUE_BASE_URL=<Formal issue Base URL with table and view params>"
 set "INNOVATION_BASE_URL=<Formal innovation Base URL with table and view params>"
 set "LARK_CLI=<path to lark-cli.cmd>"
 set "CONFIG=%~dp0src\dashboard_config.json"
-set "TEMPLATE=%~dp0src\template-dashboard-v1.3.1.html"
+set "TEMPLATE=%~dp0src\template-dashboard-v1.4.0.html"
 set "OUTPUT_DIR=%~dp0output"
-set "VARIANT=v1.3.1"
+set "VARIANT=v1.4.0"
 
 if "%BASE_URL:~0,1%"=="<" (
   echo [提示] 这是占位模板，不能直接运行。

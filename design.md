@@ -1,7 +1,7 @@
 # design.md — TDT 看板样式设计规范
 
 > **改动前先读本文件。** 任何视觉改动都应落在本文件已定的框架内;框架内的调整直接做,框架外的先改本文件再改代码。
-> 唯一正式视觉实现是 `src/template-dashboard-v1.3.1.html`（单文件、无第三方依赖、无前端构建链）。参照系是 macOS Numbers 的表格与图表样式；正式数据抓取、热更新和离线导出仍由既有 Python／lark-cli 链路负责。
+> 唯一正式视觉实现是 `src/template-dashboard-v1.4.0.html`（单文件、无第三方依赖、无前端构建链）。参照系是 macOS Numbers 的表格与图表样式；正式数据抓取、热更新和离线导出仍由既有 Python／lark-cli 链路负责。
 
 ## 0. 使用与维护约定
 
@@ -133,6 +133,7 @@
 覆盖详细进展 `.task-grid`、遗留问题 `.issue-table`、创新 `.innovation-table`、开发 `.development-table`。
 
 - 详细进展 `.task-grid` 是连续的 CSS grid 表格，不是卡片式表格；沿用本节的单线网格、隔行底色与首列深分隔线。
+- 本地 `V1.4.0` 遗留问题表的「当前进展」正文左对齐，表头继续居中；使用独立 `.issue-progress-cell`，不连带改变子任务名称、责任部门等列。「最近两周」「上周遗留」等页面名称按用户要求保持原样。
 - **表头**:实心 `--head-cell-bg` + 白字 + 700,内部分隔线 `--head-cell-line`,**无下划线、无外描边**
 - **线条**:统一 1px `--table-line`
   - `<table>` 用 `border-collapse: collapse`

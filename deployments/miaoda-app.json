@@ -8,12 +8,15 @@
   "github_branch": "sprint/default",
   "github_last_verified_commit": "721cb36",
   "github_sync_status": "verified_2026-09-03",
-  "last_verified_commit": "721cb36",
-  "last_release_id": "7680945862449253306",
-  "status": "v1.3.1_release_verified_sprint_default_second_cleanup_complete",
+  "last_verified_commit": "4888793653406605fb61e5742c463a2f95cbdf08",
+  "last_release_id": "7698783605132954629",
+  "status": "v1.4.0_published_both_runtime_pages_verified_editor_embedded_preview_loading",
+  "published_main_commit": "68724b2171645915d2541257e68a1ce3dcbcb1a1",
   "pending_release_commit": null,
-  "development_preview_source_commit": "f53c5de",
-  "cloud_workspace_head": "f53c5de",
+  "development_preview_source_commit": "4888793653406605fb61e5742c463a2f95cbdf08",
+  "cloud_workspace_head": null,
+  "cloud_workspace_unpushed_commits": 3,
+  "development_preview_validation": "direct_runtime_generation_refresh_download_verified_editor_embed_loading",
   "cloud_workspace_checkpoint_commits": [
     "a01574e",
     "b27e66c",
@@ -27,5 +30,5 @@
     "b7d5cd2",
     "f53c5de"
   ],
-  "cloud_workspace_checkpoint_status": "preserved_in_history_net_changes_reverted_by_721cb36_not_released_do_not_pull_again"
+  "cloud_workspace_checkpoint_status": "historical_checkpoints_cleaned_by_721cb36_current_cloud_has_two_auto_upgrade_commits_and_merge_unpushed_not_released"
 }
